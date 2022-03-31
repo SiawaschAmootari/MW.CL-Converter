@@ -90,3 +90,23 @@ BOOL CMWCLConverterApp::InitInstance()
 	return FALSE;
 }
 
+void	CMWCLConverterApp::ArrToVal(const CStringArray& sValArr, CString& sVal)
+{
+	return ArrToVal(_T("\r\n"), sValArr, sVal);
+}
+
+// #sia
+void	CMWCLConverterApp::ArrToVal(const CString sDel, const CStringArray& sValArr, CString& sVal)
+{
+	// Call:
+
+	sVal = _T("");
+	if (sValArr.IsEmpty() == TRUE)	return;
+
+	for (int iLine = 0; iLine < sValArr.GetSize(); iLine++)
+	{
+		sVal += sValArr[iLine];
+		if (iLine < sValArr.GetSize() - 1) sVal += sDel;
+	}
+}
+

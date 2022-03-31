@@ -19,7 +19,8 @@ class CMWCLConverterApp : public CWinApp
 {
 public:
 	CMWCLConverterApp();
-
+	void	ArrToVal(const CStringArray& sValArr, CString& sVal);
+	void	ArrToVal(const CString sDel, const CStringArray& sValArr, CString& sVal);
 // Überschreibungen
 public:
 	virtual BOOL InitInstance();

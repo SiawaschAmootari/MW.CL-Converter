@@ -7,6 +7,15 @@
 #include "MW.CL Converter.h"
 #include "MW.CL ConverterDlg.h"
 #include "afxdialogex.h"
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <map>
+#include <vector>
+#include <algorithm>
+#include <thread>
+
+using namespace std;
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -59,12 +68,18 @@ CMWCLConverterDlg::CMWCLConverterDlg(CWnd* pParent /*=nullptr*/)
 void CMWCLConverterDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_EDIT_FILE_INPUT, m_EDIT_FILE_INPUT);
+	DDX_Control(pDX, IDC_EDIT_FILE_OUTPUT, m_EDIT_FILE_OUTPUT);
+	DDX_Control(pDX, IDC_LIST_MESSAGES, m_LIST_MESSAGES);
+	DDX_Control(pDX, IDC_COMBO_FILE_PATH, m_COMBO_FILE_PATH);
 }
 
 BEGIN_MESSAGE_MAP(CMWCLConverterDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_BUTTON_OPEN, &CMWCLConverterDlg::OnBnClickedButtonOpen)
+	ON_BN_CLICKED(IDC_BUTTON_CONVERT, &CMWCLConverterDlg::OnBnClickedButtonConvert)
 END_MESSAGE_MAP()
 
 
@@ -153,3 +168,85 @@ HCURSOR CMWCLConverterDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+//Öffnet das Programm
+void CMWCLConverterDlg::OnBnClickedButtonOpen()
+{
+	try
+	{
+		CFileDialog cFileDialog(true, NULL, NULL, NULL, _T("h-files(*.h)|*.h;|All-files(*.*)|*.*;|"));
+
+		int iId;
+		iId = (int)cFileDialog.DoModal();
+		bool bOk = true;
+		CFileStatus filestatus;
+		//CString m_sInputfile;
+		CStdioFile file;
+		int fileSize;
+		if (iId == IDOK)
+		{
+			g_sFilePath = cFileDialog.GetPathName();
+			if (std::ifstream(g_sFilePath).good())
+			{
+				CString sNewName = g_sFilePath + "_backup";
+				m_COMBO_FILE_PATH.InsertString(0, g_sFilePath);
+				//rename(m_sInputfile, newName);
+				CStdioFile file;
+				file.Open(g_sFilePath, CStdioFile::modeRead);
+
+				CString sLine = _T("");
+				bool bRead;
+				CString sFilecontent = _T("");
+				int i = 0;
+
+				m_sFilecontent.RemoveAll();
+				m_FILE_NAME = g_sFilePath;
+
+				while (true)
+				{
+					bRead = file.ReadString(sLine);
+					if (bRead == false)
+					{
+						break;
+					}
+					else {
+						m_sFilecontent.Add(sLine);
+					}
+				}
+				//theApp.ArrToVal(m_sFilecontent, sFilecontent);
+				CStringArray firstHundredLines;
+				for (int i = 0; i < 100; i++) {
+					firstHundredLines.Add(m_sFilecontent.GetAt(i));
+
+				}
+				theApp.ArrToVal(firstHundredLines, sFilecontent);
+				m_EDIT_FILE_INPUT.SetWindowText(sFilecontent);
+
+				file.Close();
+				//findToolCycle();
+			}
+			if (m_FILE_NAME.GetLength() <= 0)
+			{
+				m_LIST_MESSAGES.InsertString(0, _T("No file selected"));
+			}
+			else
+			{
+				UpdateData(false);
+			}
+		}
+	}
+	catch (const std::out_of_range& e)
+	{
+		m_LIST_MESSAGES.InsertString(0, _T("No file selected"));
+	}
+	catch (const std::invalid_argument& e)
+	{
+		m_LIST_MESSAGES.InsertString(0, _T("Invalid file"));
+	}
+}
+
+//Übersetzer
+void CMWCLConverterDlg::OnBnClickedButtonConvert()
+{
+	// TODO: Add your control notification handler code here
+}
