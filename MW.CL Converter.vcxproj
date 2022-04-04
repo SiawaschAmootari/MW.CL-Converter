@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -183,6 +183,8 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Converter.h" />
+    <ClInclude Include="ConvertHeidenhain.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MW.CL Converter.h" />
     <ClInclude Include="MW.CL ConverterDlg.h" />
@@ -191,6 +193,8 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Converter.cpp" />
+    <ClCompile Include="ConvertHeidenhain.cpp" />
     <ClCompile Include="MW.CL Converter.cpp" />
     <ClCompile Include="MW.CL ConverterDlg.cpp" />
     <ClCompile Include="pch.cpp">

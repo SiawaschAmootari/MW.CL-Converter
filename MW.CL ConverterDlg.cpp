@@ -14,6 +14,7 @@
 #include <vector>
 #include <algorithm>
 #include <thread>
+#include "ConvertHeidenhain.h"
 
 using namespace std;
 
@@ -24,7 +25,7 @@ using namespace std;
 
 // CAboutDlg-Dialogfeld für Anwendungsbefehl "Info"
 
-class CAboutDlg : public CDialogEx
+class CAboutDlg : public CDialogEx 
 {
 public:
 	CAboutDlg();
@@ -248,5 +249,7 @@ void CMWCLConverterDlg::OnBnClickedButtonOpen()
 //Übersetzer
 void CMWCLConverterDlg::OnBnClickedButtonConvert()
 {
-	// TODO: Add your control notification handler code here
+	ConvertHeidenhain convert;
+	convert.startConverting(m_sFilecontent);
+
 }
