@@ -43,11 +43,6 @@ public:
 
 	CString g_sFilePath;
 	CString m_FILE_NAME;
-	CString g_x;
-	CString g_y;
-	CString g_z;
-	CString g_fedRat;
-	CString g_diameter;
 
 	afx_msg void OnBnClickedButtonOpen();
 	CComboBox m_COMBO_FILE_PATH;

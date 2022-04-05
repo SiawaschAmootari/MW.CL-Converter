@@ -175,7 +175,7 @@ void CMWCLConverterDlg::OnBnClickedButtonOpen()
 {
 	try
 	{
-		CFileDialog cFileDialog(true, NULL, NULL, NULL, _T("h-files(*.h)|*.h;|All-files(*.*)|*.*;|"));
+		CFileDialog cFileDialog(true, NULL, NULL, NULL, _T("All-files(*.*)|*.*;|"));
 
 		int iId;
 		iId = (int)cFileDialog.DoModal();
@@ -183,7 +183,7 @@ void CMWCLConverterDlg::OnBnClickedButtonOpen()
 		CFileStatus filestatus;
 		//CString m_sInputfile;
 		CStdioFile file;
-		int fileSize;
+		//int fileSize;
 		if (iId == IDOK)
 		{
 			g_sFilePath = cFileDialog.GetPathName();
@@ -216,7 +216,7 @@ void CMWCLConverterDlg::OnBnClickedButtonOpen()
 				}
 				//theApp.ArrToVal(m_sFilecontent, sFilecontent);
 				CStringArray firstHundredLines;
-				for (int i = 0; i < 100; i++) {
+				for (int i = 0; i < m_sFilecontent.GetSize(); i++) {
 					firstHundredLines.Add(m_sFilecontent.GetAt(i));
 
 				}
@@ -236,11 +236,11 @@ void CMWCLConverterDlg::OnBnClickedButtonOpen()
 			}
 		}
 	}
-	catch (const std::out_of_range& e)
+	catch (const std::out_of_range& )
 	{
 		m_LIST_MESSAGES.InsertString(0, _T("No file selected"));
 	}
-	catch (const std::invalid_argument& e)
+	catch (const std::invalid_argument& )
 	{
 		m_LIST_MESSAGES.InsertString(0, _T("Invalid file"));
 	}
@@ -250,6 +250,19 @@ void CMWCLConverterDlg::OnBnClickedButtonOpen()
 void CMWCLConverterDlg::OnBnClickedButtonConvert()
 {
 	ConvertHeidenhain convert;
+
+	
 	convert.startConverting(m_sFilecontent);
+	CString sFilecontent;
+	CStringArray firstHundredLines;
+	for (int i = 0; i < convert.convertedFileContent.GetSize(); i++) {
+		firstHundredLines.Add(convert.convertedFileContent.GetAt(i));
+
+	}
+	theApp.ArrToVal(firstHundredLines, sFilecontent);
+	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
+
+
 
 }
+
