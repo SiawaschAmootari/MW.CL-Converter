@@ -244,6 +244,7 @@ void CMWCLConverterDlg::OnBnClickedButtonOpen()
 	{
 		m_LIST_MESSAGES.InsertString(0, _T("Invalid file"));
 	}
+	
 }
 
 //Übersetzer

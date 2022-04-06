@@ -44,6 +44,8 @@ public:
 	CString g_sFilePath;
 	CString m_FILE_NAME;
 
+	//ConvertHeidenhain convert;
+
 	afx_msg void OnBnClickedButtonOpen();
 	CComboBox m_COMBO_FILE_PATH;
 	afx_msg void OnBnClickedButtonConvert();

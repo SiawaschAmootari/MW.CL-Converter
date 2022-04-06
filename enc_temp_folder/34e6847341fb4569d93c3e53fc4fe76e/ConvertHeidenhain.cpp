@@ -217,7 +217,8 @@ void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent)
 }
 
 CString ConvertHeidenhain::findSubFilesPath(CString fileName) {	
-	CString newFilePath = _T("");
+
+	CString newFilePath = g_sFilePath;
 	int index=0;
 	for (int i = newFilePath.GetLength() - 1; i > 0; i--) {
 		if (newFilePath.GetAt(i) == '\\') {

@@ -1,5 +1,6 @@
 #pragma once
 #include <afxcoll.h>
+#include <winnt.h>
 
 
 using namespace std;
@@ -7,30 +8,46 @@ using namespace std;
 class ConvertHeidenhain : public CMWCLConverterDlg
 {
 public:
+	
 	ConvertHeidenhain(); 
 	CStringArray fileContent;
 	CStringArray convertedFileContent;
+	CStringArray tool_repositoryContent;
+	CStringArray creoConfiContent;
+
+	//Methods
 	void startConverting(CStringArray &fileContent);
 	void findMovement(CString line,int index);
 	void fillCoordinates(CString line, char c, int index, CString& g_coordinate);
 	void addDecimalPlace(CString& line);
-	CString findLineNr(CString line);
+	void findToolCall(CString line);
+	void openSubFiles(CString path, CStringArray& subFileContent);
+	void findFeedRate(CString line);
+	CString findSubFilesPath(CString fileName);
+
+	
 	//filterStrings
-	CString feedRate =_T("");
-	CString spindle = _T("");
+	CString feedRate =_T("F");
+	CString spindle = _T("F");
 	CString x_coordinate=_T("0.000");
 	CString y_coordinate=_T("0.000");
 	CString z_coordinate=_T("0.000");
+	CString findLineNr(CString line);
 	//bools for algortihm
 	bool foundFMAX = false;
 	bool foundFQ = false;
+	
 	//Hardcoded Strings
 	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID  TIME.1 MOVE=");
 	CString mw_op_comment = _T("MW_OP_COMMENT");
 	CString mw_relmove_rapid = _T("MW_RELMOVE RAPID");
 	CString mw_relmove_feed = _T("MW_RELMOVE FEED");
-	CString time_move = _T("TIME.1 MOVE=");
+	CString time_move = _T(" TIME.1 MOVE=");
 	CString m19 = _T("TCPM OFF");
+	CString mw_tool_comment = _T("MW_TOOL_COMMENT ");
+	CString mw_toolpath_transform = _T("");
+	CString mw_tool_name = _T("MW_TOOL_NAME");
+	CString use_number = _T("USE_NUMBER");
 
 
 		
