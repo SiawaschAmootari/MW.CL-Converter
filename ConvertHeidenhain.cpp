@@ -215,7 +215,12 @@ void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent)
 		m_LIST_MESSAGES.InsertString(0, path);
 	}
 }
-
+/// <summary>
+/// ////////////////<--------------------------Fehler finden ---------------------------------->
+/// File pfad korrekt ausfiltern
+/// </summary>
+/// <param name="fileName"></param>
+/// <returns></returns>
 CString ConvertHeidenhain::findSubFilesPath(CString fileName) {	
 	CString newFilePath = _T("");
 	int index=0;
