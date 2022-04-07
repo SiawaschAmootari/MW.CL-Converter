@@ -19,27 +19,48 @@ using namespace std;
 
 ConvertHeidenhain::ConvertHeidenhain() {};
 
-void ConvertHeidenhain::startConverting(CStringArray& fileContent)
+void ConvertHeidenhain::startConverting(CStringArray& fileContent, CString filePath)
 {
+	path = filePath;
 	CString tool_repositoryName=_T("tool_repository.cl");
 	CString creoConfiName = _T("creo2mw.ini");
 	CString tool_repositoryPath = findSubFilesPath(tool_repositoryName);
 	CString creoConfiPath = findSubFilesPath(creoConfiName);
-	
+	CString indexString;
 	openSubFiles(tool_repositoryPath ,tool_repositoryContent);
 	openSubFiles(creoConfiPath,creoConfiContent);
+
+	bool foundOpCycle = false;
 
 	for (int i = 0; i < fileContent.GetSize(); i++) {
 		if (fileContent.GetAt(i).Find(_T("L X")) != -1 || fileContent.GetAt(i).Find(_T("L Y")) != -1 || fileContent.GetAt(i).Find(_T("L Z")) != -1) {
 			findMovement(fileContent.GetAt(i),i);
 		}
+		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).Find(_T("BLOCKFORM")) == -1 && fileContent.GetAt(i).Find(_T("NP")) == -1) {
+			if (foundOpCycle == true) {
+				convertedFileContent.Add(mw_op_end);
+			}
+			findComment(fileContent.GetAt(i));
+			convertedFileContent.Add(mw_op_start);
+			op_number_index++;
+			indexString.Format(_T("%d"), op_number_index);
+			convertedFileContent.Add(mw_op_comment);
+			foundOpCycle = true;
+		}
 		else if (fileContent.GetAt(i).Find(_T("TOOL CALL")) != -1) {
+			
+			//convertedFileContent.Add(mw_op_start);
+			convertedFileContent.Add(mw_op_number+_T(" ")+indexString);
 			findToolCall(fileContent.GetAt(i));
+			//convertedFileContent.Add(mw_op_end);
+			//foundOpCycle = true;
+
 		}
 		else if (fileContent.GetAt(i).Find(_T("FN")) != -1) {
 			findFeedRate(fileContent.GetAt(i));
 		}
 	}
+
 }
 
 		
@@ -91,6 +112,7 @@ void ConvertHeidenhain::findMovement(CString line, int index) {
 	CString lineNr = findLineNr(line);
 	convertedLine.Append(lineNr);
 	convertedFileContent.Add(convertedLine+_T(" #")+line);
+
 }
 
 void ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString& g_coordinate) {
@@ -173,7 +195,9 @@ void ConvertHeidenhain::findToolCall(CString line) {
 		
 	}
 
-
+	findToolName(toolNameComment);
+	convertedFileContent.Add(mw_tool_name);
+	convertedFileContent.Add(mw_tool_comment);
 
 }
 
@@ -199,6 +223,13 @@ void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent)
 				subFileContent.Add(sLine);
 			}
 			csfFile.Close();
+			CStringArray firstHundredLines;
+			/*for (int i = 0; i < subFileContent.GetSize(); i++) {
+				firstHundredLines.Add(subFileContent.GetAt(i));
+
+			}
+			theApp.ArrToVal(firstHundredLines, sFilecontent);
+			m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);*/
 		}
 		catch (const std::out_of_range& )
 		{
@@ -215,24 +246,58 @@ void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent)
 		m_LIST_MESSAGES.InsertString(0, path);
 	}
 }
-/// <summary>
-/// ////////////////<--------------------------Fehler finden ---------------------------------->
-/// File pfad korrekt ausfiltern
-/// </summary>
-/// <param name="fileName"></param>
-/// <returns></returns>
+
 CString ConvertHeidenhain::findSubFilesPath(CString fileName) {	
-	CString newFilePath = _T("");
+	CString newFilePath = path;
 	int index=0;
 	for (int i = newFilePath.GetLength() - 1; i > 0; i--) {
 		if (newFilePath.GetAt(i) == '\\') {
-			index = i;
 			break;
-		}
-		//newFilePath.Delete(i, 1);		//Pfad des Hauptprogramm wird genutzt um den Pfad des Subprogramms zu erstellen
+		}		//Pfad des Hauptprogramm wird genutzt um den Pfad des Subprogramms zu erstellen
+		newFilePath.Delete(i, 1);
 	}
-	newFilePath.Delete(index, 1);
-	newFilePath.Append(_T("..\\")+fileName);
+	//newFilePath.Delete(index, 1);
+	newFilePath.Append(fileName);
 	return newFilePath;
 }
 
+void ConvertHeidenhain::findToolName(CString toolNameComment) {
+	mw_tool_name = _T("");
+	mw_tool_comment = _T("");
+	CString substring;
+	int indexToolNameComment=0;
+	for (int i = 0; i < tool_repositoryContent.GetSize(); i++) {
+		if (tool_repositoryContent.GetAt(i).Find(toolNameComment)!=-1) {
+			indexToolNameComment = i;
+			break;
+		}
+	}
+	mw_tool_comment.Append(tool_repositoryContent.GetAt(indexToolNameComment + 1));
+
+	mw_tool_name.Append(tool_repositoryContent.GetAt(indexToolNameComment - 2));
+	mw_tool_name.Append(_T(" USE_NUMBER "));
+	substring = tool_repositoryContent.GetAt(indexToolNameComment - 1).Right(tool_repositoryContent.GetAt(indexToolNameComment - 1).GetLength() - 
+																		(tool_repositoryContent.GetAt(indexToolNameComment - 1).Find(_T(" "))+1));
+	mw_tool_name.Append(substring);
+	
+}
+
+void ConvertHeidenhain::findComment(CString line) {
+	mw_op_comment = _T("MW_OP_COMMENT");
+	bool foundComment = false;
+	for (int i = 0; i < line.GetLength(); i++) {
+		if (line.GetAt(i)=='-'  && foundComment == false) {
+			foundComment = true;
+			mw_op_comment.AppendChar('\"');
+			i++;
+		}
+		if (foundComment == true) {
+			mw_op_comment.AppendChar(line.GetAt(i));
+		}
+		if (foundComment == true && line.GetAt(i) == '-') {
+			mw_op_comment.AppendChar('\"');
+			break;
+		}
+	}
+
+}

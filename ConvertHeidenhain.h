@@ -16,13 +16,16 @@ public:
 	CStringArray creoConfiContent;
 
 	//Methods
-	void startConverting(CStringArray &fileContent);
+	void startConverting(CStringArray &fileContent, CString filePath);
 	void findMovement(CString line,int index);
 	void fillCoordinates(CString line, char c, int index, CString& g_coordinate);
 	void addDecimalPlace(CString& line);
 	void findToolCall(CString line);
 	void openSubFiles(CString path, CStringArray& subFileContent);
 	void findFeedRate(CString line);
+	void findToolName(CString toolNameComment);
+	void findComment(CString line);
+
 	CString findSubFilesPath(CString fileName);
 
 	
@@ -33,24 +36,29 @@ public:
 	CString y_coordinate=_T("0.000");
 	CString z_coordinate=_T("0.000");
 	CString findLineNr(CString line);
+	CString path;
+	
 	//bools for algortihm
 	bool foundFMAX = false;
 	bool foundFQ = false;
 	
 	//Hardcoded Strings
 	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID  TIME.1 MOVE=");
-	CString mw_op_comment = _T("MW_OP_COMMENT");
+	CString mw_op_comment;
 	CString mw_relmove_rapid = _T("MW_RELMOVE RAPID");
 	CString mw_relmove_feed = _T("MW_RELMOVE FEED");
 	CString time_move = _T(" TIME.1 MOVE=");
 	CString m19 = _T("TCPM OFF");
-	CString mw_tool_comment = _T("MW_TOOL_COMMENT ");
+	CString mw_tool_comment = _T("");
 	CString mw_toolpath_transform = _T("");
-	CString mw_tool_name = _T("MW_TOOL_NAME");
+	CString mw_tool_name = _T("");
 	CString use_number = _T("USE_NUMBER");
+	CString mw_op_start = _T("MW_OP_START");
+	CString mw_op_end = _T("MW_OP_END");
+	CString mw_op_number = _T("MW_OP_NUMBER");
 
-
-		
+	//
+	int op_number_index = 0;
 
 };
 

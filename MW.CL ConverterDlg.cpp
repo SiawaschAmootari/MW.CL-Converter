@@ -253,7 +253,7 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	ConvertHeidenhain convert;
 
 	
-	convert.startConverting(m_sFilecontent);
+	convert.startConverting(m_sFilecontent,g_sFilePath);
 	CString sFilecontent;
 	CStringArray firstHundredLines;
 	for (int i = 0; i < convert.convertedFileContent.GetSize(); i++) {
@@ -263,7 +263,17 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
 	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
 
+	for (int i = 0; i < convert.tool_repositoryContent.GetSize(); i++) {
+		firstHundredLines.Add(convert.tool_repositoryContent.GetAt(i));
 
+	}
+	for (int i = 0; i < convert.creoConfiContent.GetSize(); i++) {
+		firstHundredLines.Add(convert.creoConfiContent.GetAt(i));
+
+	}
+	//firstHundredLines.Add(convert.mw_tool_name);
+	theApp.ArrToVal(firstHundredLines, sFilecontent);
+	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent); 
 
 }
 
