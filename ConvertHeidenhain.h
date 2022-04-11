@@ -14,6 +14,7 @@ public:
 	CStringArray convertedFileContent;
 	CStringArray tool_repositoryContent;
 	CStringArray creoConfiContent;
+	CStringArray moveLines;
 
 	//Methods
 	void startConverting(CStringArray &fileContent, CString filePath);
@@ -25,7 +26,8 @@ public:
 	void findFeedRate(CString line);
 	void findToolName(CString toolNameComment);
 	void findComment(CString line);
-
+	void startMachineCycle(CString line, bool& foundOpCycle, CString indexString);
+	void findCircle(CString lineCC, CString lineC);
 	CString findSubFilesPath(CString fileName);
 
 	
@@ -43,7 +45,7 @@ public:
 	bool foundFQ = false;
 	
 	//Hardcoded Strings
-	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID  TIME.1 MOVE=");
+	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID   MOVE=");
 	CString mw_op_comment;
 	CString mw_relmove_rapid = _T("MW_RELMOVE RAPID");
 	CString mw_relmove_feed = _T("MW_RELMOVE FEED");

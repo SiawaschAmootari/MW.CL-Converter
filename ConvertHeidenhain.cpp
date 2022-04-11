@@ -36,29 +36,29 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent, CString fileP
 		if (fileContent.GetAt(i).Find(_T("L X")) != -1 || fileContent.GetAt(i).Find(_T("L Y")) != -1 || fileContent.GetAt(i).Find(_T("L Z")) != -1) {
 			findMovement(fileContent.GetAt(i),i);
 		}
-		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).Find(_T("BLOCKFORM")) == -1 && fileContent.GetAt(i).Find(_T("NP")) == -1) {
-			if (foundOpCycle == true) {
-				convertedFileContent.Add(mw_op_end);
-			}
+		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength()-1) =='-') {
 			findComment(fileContent.GetAt(i));
-			convertedFileContent.Add(mw_op_start);
-			op_number_index++;
-			indexString.Format(_T("%d"), op_number_index);
-			convertedFileContent.Add(mw_op_comment);
-			foundOpCycle = true;
+			
 		}
 		else if (fileContent.GetAt(i).Find(_T("TOOL CALL")) != -1) {
 			
-			//convertedFileContent.Add(mw_op_start);
-			convertedFileContent.Add(mw_op_number+_T(" ")+indexString);
-			findToolCall(fileContent.GetAt(i));
-			//convertedFileContent.Add(mw_op_end);
-			//foundOpCycle = true;
-
+			startMachineCycle(fileContent.GetAt(i),foundOpCycle,indexString);
+		
 		}
 		else if (fileContent.GetAt(i).Find(_T("FN")) != -1) {
 			findFeedRate(fileContent.GetAt(i));
 		}
+		else if (fileContent.GetAt(i).Find(_T("CC")) != -1) {
+			findCircle(fileContent.GetAt(i), fileContent.GetAt(i+1));
+			i++;
+		}
+		else if (fileContent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
+			break;
+		}
+	}
+
+	for (int i = 0; i < moveLines.GetSize(); i++) {
+		convertedFileContent.Add(moveLines.GetAt(i));
 	}
 
 }
@@ -111,7 +111,8 @@ void ConvertHeidenhain::findMovement(CString line, int index) {
 	convertedLine.Append(time_move);
 	CString lineNr = findLineNr(line);
 	convertedLine.Append(lineNr);
-	convertedFileContent.Add(convertedLine+_T(" #")+line);
+	moveLines.Add(convertedLine+_T(" #")+line);
+
 
 }
 
@@ -150,6 +151,7 @@ CString ConvertHeidenhain::findLineNr(CString line) {
 }
 
 void ConvertHeidenhain::findFeedRate(CString line) {
+	feedRate = _T("F");
 	bool foundFeedRate = false;
 	for (int i = 0; i < line.GetAt(i); i++) {
 		if (line.GetAt(i) == ';') {
@@ -170,7 +172,7 @@ void ConvertHeidenhain::findToolCall(CString line) {
 	CString toolNameComment = _T("");
 	bool foundToolNameComment = false;
 	bool foundSpindl = false;
-
+	spindle = _T("F");
 	for (int i = 0; i < line.GetLength(); i++) {
 		//TOOLNAMECOMMENT
 		if (line.GetAt(i) == ' ' && foundToolNameComment==true) {
@@ -196,8 +198,8 @@ void ConvertHeidenhain::findToolCall(CString line) {
 	}
 
 	findToolName(toolNameComment);
-	convertedFileContent.Add(mw_tool_name);
-	convertedFileContent.Add(mw_tool_comment);
+	//convertedFileContent.Add(mw_tool_name);
+	//convertedFileContent.Add(mw_tool_comment);
 
 }
 
@@ -279,11 +281,10 @@ void ConvertHeidenhain::findToolName(CString toolNameComment) {
 	substring = tool_repositoryContent.GetAt(indexToolNameComment - 1).Right(tool_repositoryContent.GetAt(indexToolNameComment - 1).GetLength() - 
 																		(tool_repositoryContent.GetAt(indexToolNameComment - 1).Find(_T(" "))+1));
 	mw_tool_name.Append(substring);
-	
 }
 
 void ConvertHeidenhain::findComment(CString line) {
-	mw_op_comment = _T("MW_OP_COMMENT");
+	mw_op_comment = _T("MW_OP_COMMENT ");
 	bool foundComment = false;
 	for (int i = 0; i < line.GetLength(); i++) {
 		if (line.GetAt(i)=='-'  && foundComment == false) {
@@ -294,10 +295,85 @@ void ConvertHeidenhain::findComment(CString line) {
 		if (foundComment == true) {
 			mw_op_comment.AppendChar(line.GetAt(i));
 		}
-		if (foundComment == true && line.GetAt(i) == '-') {
+		if (foundComment == true && line.GetAt(i) == '-'|| i == line.GetAllocLength()-1) {
 			mw_op_comment.AppendChar('\"');
 			break;
 		}
 	}
+}
 
+void ConvertHeidenhain::startMachineCycle(CString line,bool &foundOpCycle,CString indexString) {
+	findToolCall(line);
+	if (foundOpCycle == true) {
+		for (int i = 0; i < moveLines.GetSize(); i++) {
+			convertedFileContent.Add(moveLines.GetAt(i));
+		}
+		moveLines.RemoveAll();
+		convertedFileContent.Add(mw_op_end);
+	}
+	convertedFileContent.Add(mw_op_start);
+	op_number_index++;
+	indexString.Format(_T("%d"), op_number_index);
+	convertedFileContent.Add(mw_op_number + _T(" ") + indexString);
+	convertedFileContent.Add(mw_op_comment);
+	convertedFileContent.Add(mw_tool_name);
+	convertedFileContent.Add(mw_tool_comment);
+	foundOpCycle = true;
+}
+
+void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
+	for (int i = 0; i < lineCC.GetLength(); i++) {
+		//Refactor fillCoordinate
+		fillCoordinates(lineCC, 'X', i, x_coordinate);
+		fillCoordinates(lineCC, 'Y', i, y_coordinate);
+	}
+
+	addDecimalPlace(x_coordinate);
+	addDecimalPlace(y_coordinate);
+
+	double ccX = _wtof(x_coordinate);
+	double ccY = _wtof(y_coordinate);
+	//Zeile für C
+	CString CClineX = x_coordinate;
+	CString CClineY = y_coordinate;
+	CString gotoLine = _T("");
+
+	for (int i = 0; i < lineC.GetLength(); i++) {
+		//Refactor fillCoordinate
+		fillCoordinates(lineC, 'X', i, x_coordinate);
+		fillCoordinates(lineC, 'Y', i, y_coordinate);
+	}
+
+	addDecimalPlace(x_coordinate);
+	addDecimalPlace(y_coordinate);
+
+	double cX = _wtof(x_coordinate);
+	double cY = _wtof(y_coordinate);
+	CString ClineX = x_coordinate;
+	CString ClineY = y_coordinate;
+	double result = sqrt(((cX - ccX) * (cX - ccX)) + ((cY - ccY) * (cY - ccY)));//?
+
+	CString rotationDirection;
+	if (lineC.Find(_T("DR+")) != -1 || lineC.Find(_T("DR +")) != -1) {
+		rotationDirection = _T("R+");
+	}
+	else if (lineC.Find(_T("DR-")) != -1 || lineC.Find(_T("DR -")) != -1) {
+		rotationDirection = _T("R-");
+	}
+
+	CString resultString;
+	resultString.Format(_T("%f"), result);
+	addDecimalPlace(resultString);
+	CString convertedLineOne;
+	CString convertedLineTwo;
+	CString lineNr;
+	lineNr = findLineNr(lineCC);
+	convertedLineOne = _T("MW_RELMOVE FEED  ") + CClineX + _T(" ") + CClineY + _T(" ") +feedRate +_T(" MOVE=")+lineNr+ _T("#")+lineCC;
+	lineNr = findLineNr(lineC);
+	convertedLineTwo = _T("MW_RELARCMOVE FEED  ")+ ClineX + _T(" ") + ClineY + _T(" ")+rotationDirection+resultString+_T(" NI0. NJ0. NK1. ")+feedRate+ _T(" MOVE=") + lineNr+_T("#") + lineC;
+	//gotoLine = _T("GOTO / ") + g_x + _T(", ") + g_y + _T(", ") + g_z;
+
+	moveLines.Add(convertedLineOne);
+	moveLines.Add(convertedLineTwo);
+	//m_sFileConverted.Add(gotoLine);
 }

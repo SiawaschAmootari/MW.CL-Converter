@@ -263,10 +263,10 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
 	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
 
-	for (int i = 0; i < convert.tool_repositoryContent.GetSize(); i++) {
+	/*for (int i = 0; i < convert.tool_repositoryContent.GetSize(); i++) {
 		firstHundredLines.Add(convert.tool_repositoryContent.GetAt(i));
 
-	}
+	}*/
 	for (int i = 0; i < convert.creoConfiContent.GetSize(); i++) {
 		firstHundredLines.Add(convert.creoConfiContent.GetAt(i));
 
