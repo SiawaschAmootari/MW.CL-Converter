@@ -218,6 +218,9 @@ void CMWCLConverterDlg::OnBnClickedButtonOpen()
 				CStringArray firstHundredLines;
 				for (int i = 0; i < m_sFilecontent.GetSize(); i++) {
 					firstHundredLines.Add(m_sFilecontent.GetAt(i));
+					if (m_sFilecontent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
+						labelIndex = i+2;
+					}
 
 				}
 				theApp.ArrToVal(firstHundredLines, sFilecontent);
@@ -253,7 +256,7 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	ConvertHeidenhain convert;
 
 	
-	convert.startConverting(m_sFilecontent,g_sFilePath);
+	convert.startConverting(m_sFilecontent, labelIndex,g_sFilePath);
 	CString sFilecontent;
 	CStringArray firstHundredLines;
 	for (int i = 0; i < convert.convertedFileContent.GetSize(); i++) {

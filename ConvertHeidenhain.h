@@ -15,9 +15,10 @@ public:
 	CStringArray tool_repositoryContent;
 	CStringArray creoConfiContent;
 	CStringArray moveLines;
-
+	CStringArray file;
+	int label_index;
 	//Methods
-	void startConverting(CStringArray &fileContent, CString filePath);
+	void startConverting(CStringArray &fileContent,int& labelIndex ,CString filePath);
 	void findMovement(CString line,int index);
 	void fillCoordinates(CString line, char c, int index, CString& g_coordinate);
 	void addDecimalPlace(CString& line);
@@ -28,6 +29,9 @@ public:
 	void findComment(CString line);
 	void startMachineCycle(CString line, bool& foundOpCycle, CString indexString);
 	void findCircle(CString lineCC, CString lineC);
+	void findOtherLine(CString line);
+	void jumpToLabel(CString line);
+	void textFilter(CString line, int &index);
 	CString findSubFilesPath(CString fileName);
 
 	
@@ -46,6 +50,7 @@ public:
 	
 	//Hardcoded Strings
 	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID   MOVE=");
+	CString mw_other_line = _T("MW_MACHMOVE RAPID TIME.1 MOVE=");
 	CString mw_op_comment;
 	CString mw_relmove_rapid = _T("MW_RELMOVE RAPID");
 	CString mw_relmove_feed = _T("MW_RELMOVE FEED");

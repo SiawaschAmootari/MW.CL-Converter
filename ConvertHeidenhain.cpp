@@ -19,8 +19,9 @@ using namespace std;
 
 ConvertHeidenhain::ConvertHeidenhain() {};
 
-void ConvertHeidenhain::startConverting(CStringArray& fileContent, CString filePath)
+void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelIndex  ,CString filePath)
 {
+	label_index = labelIndex;
 	path = filePath;
 	CString tool_repositoryName=_T("tool_repository.cl");
 	CString creoConfiName = _T("creo2mw.ini");
@@ -29,7 +30,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent, CString fileP
 	CString indexString;
 	openSubFiles(tool_repositoryPath ,tool_repositoryContent);
 	openSubFiles(creoConfiPath,creoConfiContent);
-
+	file.Copy(fileContent);
 	bool foundOpCycle = false;
 
 	for (int i = 0; i < fileContent.GetSize(); i++) {
@@ -52,15 +53,21 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent, CString fileP
 			findCircle(fileContent.GetAt(i), fileContent.GetAt(i+1));
 			i++;
 		}
+		else if (fileContent.GetAt(i).Find(_T("CALL LBL")) != -1) {
+			jumpToLabel(fileContent.GetAt(i));
+		}
 		else if (fileContent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
 			break;
+		}else{
+			findOtherLine(fileContent.GetAt(i));
 		}
+		//textFilter(fileContent.GetAt(i), i);
 	}
 
 	for (int i = 0; i < moveLines.GetSize(); i++) {
 		convertedFileContent.Add(moveLines.GetAt(i));
 	}
-
+	convertedFileContent.Add(mw_op_end);
 }
 
 		
@@ -371,9 +378,100 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	convertedLineOne = _T("MW_RELMOVE FEED  ") + CClineX + _T(" ") + CClineY + _T(" ") +feedRate +_T(" MOVE=")+lineNr+ _T("#")+lineCC;
 	lineNr = findLineNr(lineC);
 	convertedLineTwo = _T("MW_RELARCMOVE FEED  ")+ ClineX + _T(" ") + ClineY + _T(" ")+rotationDirection+resultString+_T(" NI0. NJ0. NK1. ")+feedRate+ _T(" MOVE=") + lineNr+_T("#") + lineC;
-	//gotoLine = _T("GOTO / ") + g_x + _T(", ") + g_y + _T(", ") + g_z;
 
 	moveLines.Add(convertedLineOne);
 	moveLines.Add(convertedLineTwo);
-	//m_sFileConverted.Add(gotoLine);
+
 }
+
+void ConvertHeidenhain::findOtherLine(CString line) {
+	CString convertedLine = _T("");
+	convertedLine.Append(mw_other_line);
+	CString lineNumber = findLineNr(line);
+	convertedLine.Append(lineNumber);
+	convertedLine.Append(_T("#"));
+	convertedLine.Append(line);
+	moveLines.Add(convertedLine);
+}
+
+void ConvertHeidenhain::jumpToLabel(CString line) {
+	findOtherLine(line);
+	int spaceCount = 0;
+	CString labelName = _T("");
+	for (int i = 0; i < line.GetLength(); i++) {
+		if(line.Find(_T(" ")) != -1) {
+			spaceCount++;
+		}
+		if (spaceCount >= 2) {
+			labelName.AppendChar(line.GetAt(i));
+		}
+	}
+	bool foundLabel = false;
+	CString indexString;
+	bool foundOpCycle = false;
+	int size = file.GetSize();
+	for (int i = label_index; i < size; i++) {
+		
+		if (file.GetAt(i).Find(labelName) != -1) {
+			foundLabel = true;
+		}
+
+		if (foundLabel == true) {
+			if (file.GetAt(i).Find(_T("L X")) != -1 || file.GetAt(i).Find(_T("L Y")) != -1 || file.GetAt(i).Find(_T("L Z")) != -1) {
+				findMovement(file.GetAt(i), i);
+			}
+			else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
+				findComment(file.GetAt(i));
+
+			}
+			else if (file.GetAt(i).Find(_T("TOOL CALL")) != -1) {
+
+				startMachineCycle(file.GetAt(i), foundOpCycle, indexString);
+
+			}
+			else if (file.GetAt(i).Find(_T("FN")) != -1) {
+				findFeedRate(file.GetAt(i));
+			}
+			else if (file.GetAt(i).Find(_T("CC")) != -1) {
+				findCircle(file.GetAt(i), file.GetAt(i + 1));
+				i++;
+			}
+			else if (file.GetAt(i).Find(_T("LBL 0")) != -1) {
+				break;
+			}
+			else {
+				findOtherLine(file.GetAt(i));
+			}
+		}
+	}
+}
+
+/*void ConvertHeidenhain::textFilter(CString line, int& index) {
+	bool foundOpCycle = false;
+	CString indexString;
+	if (line.Find(_T("L X")) != -1 || line.Find(_T("L Y")) != -1 || line.Find(_T("L Z")) != -1) {
+		findMovement(line, index);
+	}
+	else if (line.Find(_T("* -")) != -1 && line.GetAt(line.GetLength() - 1) == '-') {
+		findComment(line);
+
+	}
+	else if (line.Find(_T("TOOL CALL")) != -1) {
+
+		startMachineCycle(line, foundOpCycle, indexString);
+
+	}
+	else if (line.Find(_T("FN")) != -1) {
+		findFeedRate(line);
+	}
+	else if (line.Find(_T("CC")) != -1) {
+		findCircle(line, fileContent.GetAt(index + 1));
+		index++;
+	}
+	else if (line.Find(_T("PGM ENDE")) != -1) {
+		
+	}
+	else {
+		findOtherLine(line);
+	}
+}*/

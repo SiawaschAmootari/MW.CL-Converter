@@ -43,7 +43,7 @@ public:
 
 	CString g_sFilePath;
 	CString m_FILE_NAME;
-
+	int labelIndex=0;
 	//ConvertHeidenhain convert;
 
 	afx_msg void OnBnClickedButtonOpen();
