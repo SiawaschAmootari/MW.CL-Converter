@@ -16,9 +16,19 @@
 
 
 using namespace std;
-
+/// <summary>
+/// Leerer Konstruktor, wird nur in der NW.CL ConvertDlg.cpp Klasse genutzt um auf die Methoden deser Klasse
+/// zuzugreifen
+/// </summary>
 ConvertHeidenhain::ConvertHeidenhain() {};
 
+/// <summary>
+/// @startConverting wird als Verzweigungsmethode genutzt. Je nach Verzweigung gelang der eingelesene String in eine andere Methode in
+/// der dieser dann übersetzt wird.
+/// </summary>
+/// @param [fileContent] der Übergebene CStringArray der alle Zeilen der .tap File beinhaltet.
+/// @param [labelIndex] enthält den Array index ab dem die LBLs anfangen
+/// @param [filePath] enthält den Dateipfad der geöffneten Datei
 void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelIndex  ,CString filePath)
 {
 	label_index = labelIndex;
@@ -61,7 +71,6 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		}else{
 			findOtherLine(fileContent.GetAt(i));
 		}
-		//textFilter(fileContent.GetAt(i), i);
 	}
 
 	for (int i = 0; i < moveLines.GetSize(); i++) {
@@ -70,7 +79,11 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	convertedFileContent.Add(mw_op_end);
 }
 
-		
+/// <summary>
+/// @findMovement filtert die Zeile nach den Veränderungen der X,Y und Z koordinaten aus und speichert diese in den membervariablen der Klasse ConvertHeidenhain.cpp
+/// </summary>
+/// @param[line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
+/// @param[index] für testzweck wird später rausgenommen
 void ConvertHeidenhain::findMovement(CString line, int index) {
 	
 	CString convertedLine=_T("");
@@ -123,6 +136,11 @@ void ConvertHeidenhain::findMovement(CString line, int index) {
 
 }
 
+/// <summary>
+/// @fillCoordinates die membervariablen für die koordinaten werden aktuallisiert.
+/// Die Methode sucht im String nach dem gesuchten Zeichen und befüllt die Koordinatenvariable neu.
+/// </summary>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 void ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString& g_coordinate) {
 
 	if (line.GetAt(index) == c && (line.GetAt(index + 1) == '+' || line.GetAt(index + 1) == '-')) {
@@ -139,12 +157,22 @@ void ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString
 	}
 }
 
+/// <summary>
+/// @addDecimalPlace falls der String keine Nachkommastelle enthält wird hier 
+/// ein .0 am ende des Strings hinzugefügt
+/// </summary>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 void ConvertHeidenhain::addDecimalPlace(CString& line) {
 	if (line.Find(_T(".")) == -1) {
 		line.Append(_T(".000"));
 	}
 }
 
+/// <summary>
+/// @findLineNr filtert die Zeilenummer der Zeile aus und return diese Zurück.
+/// </summary>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
+/// @returns [lineNr] enthält die gefilterte Zeilennummer
 CString ConvertHeidenhain::findLineNr(CString line) {
 	CString lineNr=_T("");
 	for (int i = 0; i < line.GetLength(); i++) {
@@ -157,6 +185,10 @@ CString ConvertHeidenhain::findLineNr(CString line) {
 	return lineNr;
 }
 
+/// <summary>
+/// @findFeedRate filtert den Wert für die Spindle aus diese wird dann in der Variable [feedRate] gespeichert 
+/// </summary>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 void ConvertHeidenhain::findFeedRate(CString line) {
 	feedRate = _T("F");
 	bool foundFeedRate = false;
@@ -174,6 +206,11 @@ void ConvertHeidenhain::findFeedRate(CString line) {
 	}
 }
 
+/// <summary>
+/// @findToolCall einzelne Information werden für den Machine Zyklus gefiltert, gesammelt und
+/// in class Variablen abgespeichert
+/// </summary>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind , dieser enthält den SubString "TOOL CALL"
 void ConvertHeidenhain::findToolCall(CString line) {
 	CString toolName = _T("");
 	CString toolNameComment = _T("");
@@ -210,6 +247,11 @@ void ConvertHeidenhain::findToolCall(CString line) {
 
 }
 
+/// <summary>
+/// @openSubFiles öffnet die Nebenfiles welche für die vollständige Übersetzung benötigt werden
+/// </summary>
+/// @param [path] beinhaltet den Pfad des .tap Files welches zuvor über den "Open" Button geöffnet wurde
+/// @param [subFileContent] ist die Adresse eines leerer CStringArrays in dem der Inhalt der ausgewählten Datei Zeilenweise eingespeichert werden
 void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent) {
 	
 	CStdioFile csfFile;
@@ -256,6 +298,11 @@ void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent)
 	}
 }
 
+/// <summary>
+/// @findSubFilesPath Schneided den Datei Pfad des .tap files aus, wird benötigt um die Subfiles automatisch zu öffnen.
+/// </summary>
+/// @param [fileName] der Dateiname der neuen Datei
+/// @returns [newFilePath] Der neue Pfad für die SubFiles
 CString ConvertHeidenhain::findSubFilesPath(CString fileName) {	
 	CString newFilePath = path;
 	int index=0;
@@ -270,6 +317,10 @@ CString ConvertHeidenhain::findSubFilesPath(CString fileName) {
 	return newFilePath;
 }
 
+/// <summary>
+/// @findToolName filtert den namen des Werkzeugstückes aus 
+/// </summary>
+/// @param [toolNameComment] 
 void ConvertHeidenhain::findToolName(CString toolNameComment) {
 	mw_tool_name = _T("");
 	mw_tool_comment = _T("");
@@ -290,6 +341,10 @@ void ConvertHeidenhain::findToolName(CString toolNameComment) {
 	mw_tool_name.Append(substring);
 }
 
+/// <summary>
+/// @findComment markiert die Zeilen als Kommentare aus
+/// </summary>
+/// @param [line]
 void ConvertHeidenhain::findComment(CString line) {
 	mw_op_comment = _T("MW_OP_COMMENT ");
 	bool foundComment = false;
@@ -309,6 +364,12 @@ void ConvertHeidenhain::findComment(CString line) {
 	}
 }
 
+/// <summary>
+/// @startMachineCycle fügt den Anfangskopf einer Machinenoperation hinzu
+/// </summary>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
+/// @param [foundOpCycle] 
+/// @param [indexString] 
 void ConvertHeidenhain::startMachineCycle(CString line,bool &foundOpCycle,CString indexString) {
 	findToolCall(line);
 	if (foundOpCycle == true) {
@@ -328,6 +389,11 @@ void ConvertHeidenhain::startMachineCycle(CString line,bool &foundOpCycle,CStrin
 	foundOpCycle = true;
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="lineCC"></param>
+/// <param name="lineC"></param>
 void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	for (int i = 0; i < lineCC.GetLength(); i++) {
 		//Refactor fillCoordinate
@@ -384,6 +450,10 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="line"></param>
 void ConvertHeidenhain::findOtherLine(CString line) {
 	CString convertedLine = _T("");
 	convertedLine.Append(mw_other_line);
@@ -394,26 +464,45 @@ void ConvertHeidenhain::findOtherLine(CString line) {
 	moveLines.Add(convertedLine);
 }
 
-void ConvertHeidenhain::jumpToLabel(CString line) {
-	findOtherLine(line);
+/// <summary>
+/// 
+/// </summary>
+/// <param name="line"></param>
+/// <param name="spaces"></param>
+/// <returns></returns>
+CString ConvertHeidenhain::findLabelName(CString line,int spaces) {
 	int spaceCount = 0;
 	CString labelName = _T("");
 	for (int i = 0; i < line.GetLength(); i++) {
-		if(line.Find(_T(" ")) != -1) {
+		if (line.GetAt(i) == ' ') {
 			spaceCount++;
 		}
-		if (spaceCount >= 2) {
+		if (spaceCount >= spaces) {
 			labelName.AppendChar(line.GetAt(i));
 		}
 	}
+	return labelName;
+}
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="line"></param>
+void ConvertHeidenhain::jumpToLabel(CString line) {
+	findOtherLine(line);
+	CString labelName = findLabelName(line,2);
 	bool foundLabel = false;
 	CString indexString;
 	bool foundOpCycle = false;
 	int size = file.GetSize();
+	CString compareLabel;
 	for (int i = label_index; i < size; i++) {
 		
 		if (file.GetAt(i).Find(labelName) != -1) {
-			foundLabel = true;
+			compareLabel = findLabelName(file.GetAt(i),1);
+			if (compareLabel.GetLength() == labelName.GetLength()) {
+				foundLabel = true;
+			}
 		}
 
 		if (foundLabel == true) {

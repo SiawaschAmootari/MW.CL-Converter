@@ -32,6 +32,7 @@ public:
 	void findOtherLine(CString line);
 	void jumpToLabel(CString line);
 	void textFilter(CString line, int &index);
+	CString findLabelName(CString line,int spaces);
 	CString findSubFilesPath(CString fileName);
 
 	
