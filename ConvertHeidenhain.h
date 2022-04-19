@@ -17,6 +17,7 @@ public:
 	CStringArray moveLines;
 	CStringArray file;
 	int label_index;
+
 	//Methods
 	void startConverting(CStringArray &fileContent,int& labelIndex ,CString filePath);
 	void findMovement(CString line,int index);
@@ -32,8 +33,12 @@ public:
 	void findOtherLine(CString line);
 	void jumpToLabel(CString line);
 	void textFilter(CString line, int &index);
+	void findTransform(CString line);
+	void findCycleDef(CString line);
+	void updateTrans(CString trans, CString line);
 	CString findLabelName(CString line,int spaces);
 	CString findSubFilesPath(CString fileName);
+	CString fillPosition(CString line);
 
 	
 	//filterStrings
@@ -42,6 +47,27 @@ public:
 	CString x_coordinate=_T("0.000");
 	CString y_coordinate=_T("0.000");
 	CString z_coordinate=_T("0.000");
+
+	CString x_cycle = _T("0.000");
+	CString y_cycle = _T("0.000");
+	CString z_cycle = _T("0.000");
+	
+	//Variablen für die Transformation
+	//------------------------------------------
+	CString xx = _T("0");
+	CString xy = _T("0");
+	CString xz = _T("0");
+	CString tx = _T("0");
+	CString yx = _T("0");
+	CString yy = _T("0");
+	CString yz = _T("0");
+	CString ty = _T("0");
+	CString zx = _T("0");
+	CString zy = _T("0");
+	CString zz = _T("0");
+	CString tz = _T("0");
+	//-----------------------------------------
+
 	CString findLineNr(CString line);
 	CString path;
 	
@@ -64,8 +90,8 @@ public:
 	CString mw_op_start = _T("MW_OP_START");
 	CString mw_op_end = _T("MW_OP_END");
 	CString mw_op_number = _T("MW_OP_NUMBER");
+	//CString mw_toolpath_transform;
 
-	//
 	int op_number_index = 0;
 
 };

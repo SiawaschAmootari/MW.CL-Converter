@@ -66,6 +66,10 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		else if (fileContent.GetAt(i).Find(_T("CALL LBL")) != -1) {
 			jumpToLabel(fileContent.GetAt(i));
 		}
+		else if (fileContent.GetAt(i).Find(_T("CYCL DEF")) != -1) {
+			findCycleDef(fileContent.GetAt(i));
+			findTransform(fileContent.GetAt(i));
+		}
 		else if (fileContent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
 			break;
 		}else{
@@ -132,8 +136,6 @@ void ConvertHeidenhain::findMovement(CString line, int index) {
 	CString lineNr = findLineNr(line);
 	convertedLine.Append(lineNr);
 	moveLines.Add(convertedLine+_T(" #")+line);
-
-
 }
 
 /// <summary>
@@ -238,7 +240,6 @@ void ConvertHeidenhain::findToolCall(CString line) {
 		if (line.GetAt(i) == 'S' && foundSpindl == false) {
 			foundSpindl = true;
 		}
-		
 	}
 
 	findToolName(toolNameComment);
@@ -277,7 +278,6 @@ void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent)
 			CStringArray firstHundredLines;
 			/*for (int i = 0; i < subFileContent.GetSize(); i++) {
 				firstHundredLines.Add(subFileContent.GetAt(i));
-
 			}
 			theApp.ArrToVal(firstHundredLines, sFilecontent);
 			m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);*/
@@ -332,19 +332,18 @@ void ConvertHeidenhain::findToolName(CString toolNameComment) {
 			break;
 		}
 	}
-	mw_tool_comment.Append(tool_repositoryContent.GetAt(indexToolNameComment + 1));
-
-	mw_tool_name.Append(tool_repositoryContent.GetAt(indexToolNameComment - 2));
+	mw_tool_comment.Append(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) + 1));
+	mw_tool_name.Append(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 2));
 	mw_tool_name.Append(_T(" USE_NUMBER "));
-	substring = tool_repositoryContent.GetAt(indexToolNameComment - 1).Right(tool_repositoryContent.GetAt(indexToolNameComment - 1).GetLength() - 
-																		(tool_repositoryContent.GetAt(indexToolNameComment - 1).Find(_T(" "))+1));
+	substring = tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).Right(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).GetLength() -
+		(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).Find(_T(" ")) + 1));
 	mw_tool_name.Append(substring);
 }
 
 /// <summary>
 /// @findComment markiert die Zeilen als Kommentare aus
 /// </summary>
-/// @param [line]
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 void ConvertHeidenhain::findComment(CString line) {
 	mw_op_comment = _T("MW_OP_COMMENT ");
 	bool foundComment = false;
@@ -390,10 +389,10 @@ void ConvertHeidenhain::startMachineCycle(CString line,bool &foundOpCycle,CStrin
 }
 
 /// <summary>
-/// 
+/// @findCircle konvertiert ein CIRCLE Befehl um, dieser Befehl besteht aus zwei Zeilen
 /// </summary>
-/// <param name="lineCC"></param>
-/// <param name="lineC"></param>
+/// @param [lineCC] die erste Zeile im MCD
+/// @param [lineC] die zweite Zeile aus dem MCD
 void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	for (int i = 0; i < lineCC.GetLength(); i++) {
 		//Refactor fillCoordinate
@@ -451,9 +450,9 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 }
 
 /// <summary>
-/// 
+/// @findOtherLine wird aktuell genutzt für alle anderen Zeilen für die der Algorithmus noch nicht geschrieben wurde
 /// </summary>
-/// <param name="line"></param>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 void ConvertHeidenhain::findOtherLine(CString line) {
 	CString convertedLine = _T("");
 	convertedLine.Append(mw_other_line);
@@ -465,11 +464,13 @@ void ConvertHeidenhain::findOtherLine(CString line) {
 }
 
 /// <summary>
-/// 
+/// @findLabelName findet den namen des Labels raus, dieser wird benötigt damit das Programm bei einem CALL zum richtig Label springen kann
 /// </summary>
-/// <param name="line"></param>
-/// <param name="spaces"></param>
-/// <returns></returns>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
+/// @param [spaces] enthält die anzahl an leerzeichen welche die Zeile beinhalten darf bis der Labelname anfängt,
+/// da die Methode sowohl für das finden des Namens im "CALL" als auch nach dem Programmende genutzt wird für einen Vergleich
+/// haben wir verschiedene Zeilen und somit verschiedene Anzahlen von Leerzeichen die wir beachten müssen
+/// @returns [labelName] ist das Ergebnis des Filterrungsprozess beinhaltet den Label namen
 CString ConvertHeidenhain::findLabelName(CString line,int spaces) {
 	int spaceCount = 0;
 	CString labelName = _T("");
@@ -485,9 +486,9 @@ CString ConvertHeidenhain::findLabelName(CString line,int spaces) {
 }
 
 /// <summary>
-/// 
+/// @jumpToLabel diese Methode wird genutzt um bei einem "CALL LBL" zu dem richtigen label zu springen
 /// </summary>
-/// <param name="line"></param>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 void ConvertHeidenhain::jumpToLabel(CString line) {
 	findOtherLine(line);
 	CString labelName = findLabelName(line,2);
@@ -497,26 +498,21 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 	int size = file.GetSize();
 	CString compareLabel;
 	for (int i = label_index; i < size; i++) {
-		
 		if (file.GetAt(i).Find(labelName) != -1) {
 			compareLabel = findLabelName(file.GetAt(i),1);
 			if (compareLabel.GetLength() == labelName.GetLength()) {
 				foundLabel = true;
 			}
 		}
-
 		if (foundLabel == true) {
 			if (file.GetAt(i).Find(_T("L X")) != -1 || file.GetAt(i).Find(_T("L Y")) != -1 || file.GetAt(i).Find(_T("L Z")) != -1) {
 				findMovement(file.GetAt(i), i);
 			}
 			else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
 				findComment(file.GetAt(i));
-
 			}
 			else if (file.GetAt(i).Find(_T("TOOL CALL")) != -1) {
-
 				startMachineCycle(file.GetAt(i), foundOpCycle, indexString);
-
 			}
 			else if (file.GetAt(i).Find(_T("FN")) != -1) {
 				findFeedRate(file.GetAt(i));
@@ -534,6 +530,119 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 		}
 	}
 }
+
+/// <summary>
+/// 
+/// </summary>
+/// @param [line]
+void ConvertHeidenhain::findTransform(CString line) {
+	CString mw_transform = _T("MW_TRANSFORM holder_transform (1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)");
+	mw_toolpath_transform = _T("MW_TOOLPATH_TRANSFORM (") + xx + _T(",") + xy + _T(",") + xz + _T(",") + tx + _T(",") + 
+		yx + _T(",") + yy + _T(",") + yz + _T(",") + ty + _T(",") + zx + _T(",") + zy + _T(",") + zz + _T(",") + tz;
+	
+	
+}
+
+/// <summary>
+/// 
+/// </summary>
+/// @param [line]
+void ConvertHeidenhain::findCycleDef(CString line) {
+	CString coordinate = findLabelName(line, 4);
+	CString transPos = _T("");
+	if (coordinate.Find(_T("X")) != -1) {
+		x_cycle = coordinate;
+	}
+	else if (coordinate.Find(_T("Y")) != -1) {
+		y_cycle = coordinate;
+	}
+	else if (coordinate.Find(_T("Z")) != -1) {
+		z_cycle = coordinate;
+	}
+	bool foundTransform = false;
+	for (int i = 0; i < creoConfiContent.GetSize(); i++) {
+		if (foundTransform == true) {
+			if (creoConfiContent.GetAt(i).GetAt(3) != '0') {
+				transPos.AppendChar(creoConfiContent.GetAt(i).GetAt(0));
+				transPos.AppendChar(creoConfiContent.GetAt(i).GetAt(1));
+				updateTrans(transPos,creoConfiContent.GetAt(i));
+			}
+		}
+		if (creoConfiContent.GetAt(i).Find(_T("TRANS")) != -1) {
+			foundTransform = true;
+		}
+		
+	}
+}
+
+/// <summary>
+/// 
+/// </summary>
+/// @param [trans]
+/// @param [line]
+void ConvertHeidenhain::updateTrans(CString trans, CString line) {
+	if (trans == _T("xx")) {
+		xx = _T("");
+		xx = fillPosition(line);
+	}
+	else if (trans == _T("xy")) {
+		xy = _T("");
+		xy = fillPosition(line);
+	}
+	else if (trans == _T("xz")) {
+		xz = _T("");
+		xz = fillPosition(line);
+	}
+	else if (trans == _T("tx")) {
+		tx = _T("");
+		tx = fillPosition(line);
+	}
+	else if (trans == _T("yx")) {
+		yx = _T("");
+		yx = fillPosition(line);
+	}
+	else if (trans == _T("yy")) {
+		yy = _T("");
+		yy = fillPosition(line);
+	}
+	else if (trans == _T("yz")) {
+		yz= _T("");
+		yz = fillPosition(line);
+	}
+	else if (trans == _T("ty")) {
+		ty = _T("");
+		ty = fillPosition(line);
+	}
+	else if (trans == _T("zx")) {
+		zx= _T("");
+		zx = fillPosition(line);
+	}
+	else if (trans == _T("zy")) {
+		zy = _T("");
+		zy = fillPosition(line);
+	}
+	else if (trans == _T("zz")) {
+		zz = _T("");
+		zz = fillPosition(line);
+	}
+	else if (trans == _T("tz")) {
+		tz = _T("");
+		tz = fillPosition(line);
+	}
+}
+/// <summary>
+/// 
+/// </summary>
+/// @param [line]
+/// @returns[filling]
+CString ConvertHeidenhain::fillPosition(CString line) {
+	CString filling = _T("");
+	for (int i = 3; i < line.GetLength(); i++) {
+		filling.AppendChar(line.GetAt(i));
+	}
+	return filling;
+}
+
 
 /*void ConvertHeidenhain::textFilter(CString line, int& index) {
 	bool foundOpCycle = false;
