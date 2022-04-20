@@ -33,10 +33,11 @@ public:
 	void findOtherLine(CString line);
 	void jumpToLabel(CString line);
 	void textFilter(CString line, int &index);
-	void findTransform(CString line);
-	void findCycleDef(CString line);
+	void outputTransform(CString line);
+	void findCycleDef(CString lineX, CString lineY, CString lineZ);
 	void updateTrans(CString trans, CString line);
-	CString findLabelName(CString line,int spaces);
+	void initialComment();
+	CString cutAtSpace(CString line,int spaces);
 	CString findSubFilesPath(CString fileName);
 	CString fillPosition(CString line);
 
