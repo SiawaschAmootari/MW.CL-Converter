@@ -36,7 +36,7 @@ public:
 	void outputTransform(CString line);
 	void findCycleDef(CString lineX, CString lineY, CString lineZ);
 	void updateTrans(CString trans, CString line);
-	void initialComment();
+	int initialComment();
 	CString cutAtSpace(CString line,int spaces);
 	CString findSubFilesPath(CString fileName);
 	CString fillPosition(CString line);
@@ -75,6 +75,7 @@ public:
 	//bools for algortihm
 	bool foundFMAX = false;
 	bool foundFQ = false;
+	bool foundRTCPOFF = false;
 	
 	//Hardcoded Strings
 	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID   MOVE=");
