@@ -40,7 +40,7 @@ public:
 	CStringArray g_conversionHistory;
 	CStringArray g_pprintList;
 	CStringArray g_toolList;
-
+	CStringArray save;
 	CString g_sFilePath;
 	CString m_FILE_NAME;
 	int labelIndex=0;
@@ -49,4 +49,5 @@ public:
 	afx_msg void OnBnClickedButtonOpen();
 	CComboBox m_COMBO_FILE_PATH;
 	afx_msg void OnBnClickedButtonConvert();
+	afx_msg void OnBnClickedButtonSave();
 };

@@ -31,6 +31,7 @@ ConvertHeidenhain::ConvertHeidenhain() {};
 /// @param [filePath] enthält den Dateipfad der geöffneten Datei
 void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelIndex  ,CString filePath)
 {
+
 	label_index = labelIndex;
 	path = filePath;
 	CString tool_repositoryName=_T("tool_repository.cl");
@@ -40,6 +41,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	CString indexString;
 	openSubFiles(tool_repositoryPath ,tool_repositoryContent);
 	openSubFiles(creoConfiPath,creoConfiContent);
+	readConfigFile();
 	file.Copy(fileContent);
 	bool foundOpCycle = false;
 
@@ -47,8 +49,11 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	
 	for (int i = indexOfFirstToolCall; i < fileContent.GetSize(); i++) {
 		if (fileContent.GetAt(i).Find(_T("M129")) != -1) {
-			convertedFileContent.Add(_T("MW_MACHMOVE RAPID  TIME.1 MOVE=14# M129 "));
+			findOtherLine(fileContent.GetAt(i));
 			foundRTCPOFF = true;
+		}
+		else if (fileContent.GetAt(i).Find(_T("M127")) != -1) {
+			findOtherLine(fileContent.GetAt(i),';');
 		}
 		else if (fileContent.GetAt(i).Find(_T("L X")) != -1 || fileContent.GetAt(i).Find(_T("L Y")) != -1 || fileContent.GetAt(i).Find(_T("L Z")) != -1||
 			fileContent.GetAt(i).Find(_T("L  X")) != -1 || fileContent.GetAt(i).Find(_T("L  Y")) != -1 || fileContent.GetAt(i).Find(_T("L  Z")) != -1) {
@@ -91,6 +96,10 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	convertedFileContent.Add(mw_op_end);
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <returns></returns>
 int ConvertHeidenhain::initialComment() {
 	int indexOfFirstToolCall = 0;
 	convertedFileContent.Add(_T("MW_CL_VERSION 1.2"));
@@ -98,12 +107,15 @@ int ConvertHeidenhain::initialComment() {
 	convertedFileContent.Add(_T("<!-- || ====================================================================== || -->"));
 	convertedFileContent.Add(_T("MW_OP_START"));
 	convertedFileContent.Add(_T("MW_OP_COMMENT \"INITIAL\""));
-	convertedFileContent.Add(_T("MW_HEADERAXESNAME \"G - Code\""));
+	convertedFileContent.Add(_T("MW_HEADERAXESNAME \"G-Code\""));
 
 	for (int i = 0; i < file.GetSize(); i++) {
 		if (file.GetAt(i).Find(_T("M129")) != -1) {
-			convertedFileContent.Add(_T("MW_MACHMOVE RAPID  TIME.1 MOVE=14# M129 "));
+			findOtherLine(file.GetAt(i),';');
 			foundRTCPOFF = true;
+		}
+		else if (file.GetAt(i).Find(_T("M127")) != -1) {
+			findOtherLine(file.GetAt(i),';');
 		}
 		else if (file.GetAt(i).Find(_T("L X")) != -1 || file.GetAt(i).Find(_T("L Y")) != -1 || file.GetAt(i).Find(_T("L Z")) != -1 ||
 			file.GetAt(i).Find(_T("L  X")) != -1 || file.GetAt(i).Find(_T("L  Y")) != -1 || file.GetAt(i).Find(_T("L  Z")) != -1) {
@@ -121,8 +133,8 @@ int ConvertHeidenhain::initialComment() {
 			i++;
 		}
 		else if (file.GetAt(i).Find(_T("CYCL DEF")) != -1) {
-			findCycleDef(file.GetAt(i + 1), file.GetAt(i + 2), file.GetAt(i + 3));
-			outputTransform(file.GetAt(i));
+			//findCycleDef(file.GetAt(i + 1), file.GetAt(i + 2), file.GetAt(i + 3));
+			//outputTransform(file.GetAt(i));
 			findOtherLine(file.GetAt(i));
 			findOtherLine(file.GetAt(i + 1));
 			findOtherLine(file.GetAt(i + 2));
@@ -524,6 +536,22 @@ void ConvertHeidenhain::findOtherLine(CString line) {
 	convertedLine.Append(line);
 	moveLines.Add(convertedLine);
 }
+/// <summary>
+/// 
+/// </summary>
+/// <param name="line"></param>
+/// <param name="c"></param>
+void ConvertHeidenhain::findOtherLine(CString line, char c) {
+	CString convertedLine = _T("");
+	convertedLine.Append(mw_other_line);
+	CString lineNumber = findLineNr(line);
+	line = cutAtSpace(line, 1);
+	convertedLine.Append(lineNumber);
+	convertedLine.Append(_T("#"));
+	line = cutAtSpace(line, 1,c);
+	convertedLine.Append(line);
+	moveLines.Add(convertedLine);
+}
 
 /// <summary>
 /// @findLabelName findet den namen des Labels raus, dieser wird benötigt damit das Programm bei einem CALL zum richtig Label springen kann
@@ -543,6 +571,30 @@ CString ConvertHeidenhain::cutAtSpace(CString line,int spaces) {
 		if (spaceCount >= spaces) {
 			labelName.AppendChar(line.GetAt(i));
 		}
+	}
+	return labelName;
+}
+/// <summary>
+/// 
+/// </summary>
+/// <param name="line"></param>
+/// <param name="spaces"></param>
+/// <param name="c"></param>
+/// <returns></returns>
+CString ConvertHeidenhain::cutAtSpace(CString line, int spaces, char c) {
+	int spaceCount = 0;
+	CString labelName = _T("");
+	for (int i = 0; i < line.GetLength(); i++) {
+		if (line.GetAt(i) == c) {
+			break;
+		}
+		if (line.GetAt(i) == ' ') {
+			spaceCount++;
+		}
+		if (spaceCount >= spaces) {
+			labelName.AppendChar(line.GetAt(i));
+		}
+		
 	}
 	return labelName;
 }
@@ -703,4 +755,10 @@ CString ConvertHeidenhain::fillPosition(CString line) {
 		filling.AppendChar(line.GetAt(i));
 	}
 	return filling;
+}
+
+void ConvertHeidenhain::readConfigFile() {
+	CString configPath = findSubFilesPath(_T("config.txt"));
+	openSubFiles(configPath, configFile);
+
 }

@@ -16,9 +16,11 @@ public:
 	CStringArray creoConfiContent;
 	CStringArray moveLines;
 	CStringArray file;
+	CStringArray configFile;
 	int label_index;
 
 	//Methods
+	void readConfigFile();
 	void startConverting(CStringArray &fileContent,int& labelIndex ,CString filePath);
 	void findMovement(CString line,int index);
 	void fillCoordinates(CString line, char c, int index, CString& g_coordinate);
@@ -31,6 +33,7 @@ public:
 	void startMachineCycle(CString line, bool& foundOpCycle, CString indexString);
 	void findCircle(CString lineCC, CString lineC);
 	void findOtherLine(CString line);
+	void findOtherLine(CString line, char c);
 	void jumpToLabel(CString line);
 	void textFilter(CString line, int &index);
 	void outputTransform(CString line);
@@ -38,6 +41,7 @@ public:
 	void updateTrans(CString trans, CString line);
 	int initialComment();
 	CString cutAtSpace(CString line,int spaces);
+	CString cutAtSpace(CString line, int spaces,char c);
 	CString findSubFilesPath(CString fileName);
 	CString fillPosition(CString line);
 
@@ -45,13 +49,13 @@ public:
 	//filterStrings
 	CString feedRate =_T("F");
 	CString spindle = _T("F");
-	CString x_coordinate=_T("0.000");
-	CString y_coordinate=_T("0.000");
-	CString z_coordinate=_T("0.000");
+	CString x_coordinate=_T("+0.000");
+	CString y_coordinate=_T("+0.000");
+	CString z_coordinate=_T("+0.000");
 
-	CString x_cycle = _T("0.000");
-	CString y_cycle = _T("0.000");
-	CString z_cycle = _T("0.000");
+	CString x_cycle = _T("+0.000");
+	CString y_cycle = _T("+0.000");
+	CString z_cycle = _T("+0.000");
 	
 	//Variablen für die Transformation
 	//------------------------------------------
@@ -67,6 +71,25 @@ public:
 	CString zy = _T("0");
 	CString zz = _T("0");
 	CString tz = _T("0");
+	//-----------------------------------------
+
+
+	//Variablen für die Config Datei
+	//-----------------------------------------
+	CString version = _T("");
+	CString unit = _T("");
+	CString initial = _T("");
+	CString outputname = _T("");
+	CString safepoint = _T("");
+	//CString rtcp = _T("");
+	CString headadapter = _T("");
+	CString postconfig = _T("");
+	CString shortestpath = _T("");
+	CString toolChangeTime = _T("");
+	CString toolChangePoint_x = _T("");
+	CString toolChangePoint_y = _T("");
+	CString toolChangePoint_z = _T("");
+
 	//-----------------------------------------
 
 	CString findLineNr(CString line);

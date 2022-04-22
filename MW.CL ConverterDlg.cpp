@@ -81,6 +81,7 @@ BEGIN_MESSAGE_MAP(CMWCLConverterDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_OPEN, &CMWCLConverterDlg::OnBnClickedButtonOpen)
 	ON_BN_CLICKED(IDC_BUTTON_CONVERT, &CMWCLConverterDlg::OnBnClickedButtonConvert)
+	ON_BN_CLICKED(IDC_BUTTON_SAVE, &CMWCLConverterDlg::OnBnClickedButtonSave)
 END_MESSAGE_MAP()
 
 
@@ -266,10 +267,10 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
 	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
 
-	/*for (int i = 0; i < convert.tool_repositoryContent.GetSize(); i++) {
-		firstHundredLines.Add(convert.tool_repositoryContent.GetAt(i));
+	for (int i = 0; i < convert.configFile.GetSize(); i++) {
+		firstHundredLines.Add(convert.configFile.GetAt(i));
 
-	}*/
+	}
 	for (int i = 0; i < convert.creoConfiContent.GetSize(); i++) {
 		firstHundredLines.Add(convert.creoConfiContent.GetAt(i));
 
@@ -278,5 +279,33 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
 	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent); 
 
+	m_sFileConverted.Copy(firstHundredLines);
 }
 
+
+
+void CMWCLConverterDlg::OnBnClickedButtonSave()
+{
+	CFileDialog cFileDialog(false, _T("mpf"), m_FILE_NAME, OFN_OVERWRITEPROMPT, _T("cl-file (*.cl)|*.cl;"));
+	int iId;
+	iId = (int)cFileDialog.DoModal();
+	bool bOk = true;
+	CString m_sSavefile;
+
+	if (iId == IDOK)
+	{
+		m_sSavefile = cFileDialog.GetPathName();
+		CStdioFile file(cFileDialog.GetPathName(), CFile::modeCreate | CFile::modeWrite | CFile::typeText);
+		for (int iIndexM_sFilecontentNew = 0; iIndexM_sFilecontentNew < m_sFileConverted.GetSize(); iIndexM_sFilecontentNew++)
+		{
+			file.WriteString(m_sFileConverted.GetAt(iIndexM_sFilecontentNew).GetString());
+			file.WriteString(_T("\n"));
+		}
+		if (m_sFilecontent.GetSize() <= 0)
+		{
+			m_LIST_MESSAGES.InsertString(0, _T("File is empty!"));
+		}
+		file.Flush();
+		file.Close();
+	}
+}
