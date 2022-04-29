@@ -115,6 +115,7 @@ public:
 	CString mw_op_start = _T("MW_OP_START");
 	CString mw_op_end = _T("MW_OP_END");
 	CString mw_op_number = _T("MW_OP_NUMBER");
+	CString mw_transform = _T("");
 	//CString mw_toolpath_transform;
 
 	int op_number_index = 0;

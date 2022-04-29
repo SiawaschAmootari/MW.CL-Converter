@@ -267,14 +267,12 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
 	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
 
-	for (int i = 0; i < convert.configFile.GetSize(); i++) {
-		firstHundredLines.Add(convert.configFile.GetAt(i));
-
-	}
-	for (int i = 0; i < convert.creoConfiContent.GetSize(); i++) {
-		firstHundredLines.Add(convert.creoConfiContent.GetAt(i));
-
-	}
+	//for (int i = 0; i < convert.configFile.GetSize(); i++) {
+	//	firstHundredLines.Add(convert.configFile.GetAt(i));
+	//}
+	//for (int i = 0; i < convert.creoConfiContent.GetSize(); i++) {
+	//	firstHundredLines.Add(convert.creoConfiContent.GetAt(i));
+	//}
 	//firstHundredLines.Add(convert.mw_tool_name);
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
 	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent); 

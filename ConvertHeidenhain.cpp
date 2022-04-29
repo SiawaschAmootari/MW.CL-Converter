@@ -31,7 +31,7 @@ ConvertHeidenhain::ConvertHeidenhain() {};
 /// @param [filePath] enthält den Dateipfad der geöffneten Datei
 void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelIndex  ,CString filePath)
 {
-
+	readConfigFile();
 	label_index = labelIndex;
 	path = filePath;
 	CString tool_repositoryName=_T("tool_repository.cl");
@@ -41,7 +41,6 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	CString indexString;
 	openSubFiles(tool_repositoryPath ,tool_repositoryContent);
 	openSubFiles(creoConfiPath,creoConfiContent);
-	readConfigFile();
 	file.Copy(fileContent);
 	bool foundOpCycle = false;
 
@@ -76,11 +75,12 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		else if (fileContent.GetAt(i).Find(_T("CALL LBL")) != -1) {
 			jumpToLabel(fileContent.GetAt(i));
 		}
-		else if (fileContent.GetAt(i).Find(_T("CYCL DEF")) != -1) {
+		/*else if (fileContent.GetAt(i).Find(_T("CYCL DEF")) != -1) {
 			findCycleDef(fileContent.GetAt(i+1), fileContent.GetAt(i + 2), fileContent.GetAt(i + 3));
 			outputTransform(fileContent.GetAt(i));
+			startMachineCycle(fileContent.GetAt(i), foundOpCycle, indexString);
 			i += 3;
-		}else if (fileContent.GetAt(i).Find(_T(";")) != -1) {
+		}*/else if (fileContent.GetAt(i).Find(_T(";")) != -1) {
 			//nichts!
 		}
 		else if (fileContent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
@@ -94,6 +94,9 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		convertedFileContent.Add(moveLines.GetAt(i));
 	}
 	convertedFileContent.Add(mw_op_end);
+	convertedFileContent.Add(_T("MW_STOP"));
+	convertedFileContent.Add(_T("<!-- || ====================================================================== || -->"));
+	convertedFileContent.Add(_T("<!-- || ====================================================================== || -->"));
 }
 
 /// <summary>
@@ -102,12 +105,12 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 /// <returns></returns>
 int ConvertHeidenhain::initialComment() {
 	int indexOfFirstToolCall = 0;
-	convertedFileContent.Add(_T("MW_CL_VERSION 1.2"));
-	convertedFileContent.Add(_T("MW_UNITS_METRIC 1"));
+	convertedFileContent.Add(version);
+	convertedFileContent.Add(unit);
 	convertedFileContent.Add(_T("<!-- || ====================================================================== || -->"));
 	convertedFileContent.Add(_T("MW_OP_START"));
-	convertedFileContent.Add(_T("MW_OP_COMMENT \"INITIAL\""));
-	convertedFileContent.Add(_T("MW_HEADERAXESNAME \"G-Code\""));
+	convertedFileContent.Add(initial);
+	convertedFileContent.Add(outputname);
 
 	for (int i = 0; i < file.GetSize(); i++) {
 		if (file.GetAt(i).Find(_T("M129")) != -1) {
@@ -152,8 +155,8 @@ int ConvertHeidenhain::initialComment() {
 
 	for (int i = 0; i < moveLines.GetSize(); i++) {
 		convertedFileContent.Add(moveLines.GetAt(i));
-		CString test = moveLines.GetAt(i);
 	}
+	convertedFileContent.Add(mw_op_end);
 	moveLines.RemoveAll();
 	return indexOfFirstToolCall;
 	//---------> here
@@ -326,7 +329,6 @@ void ConvertHeidenhain::findToolCall(CString line) {
 /// @param [path] beinhaltet den Pfad des .tap Files welches zuvor über den "Open" Button geöffnet wurde
 /// @param [subFileContent] ist die Adresse eines leerer CStringArrays in dem der Inhalt der ausgewählten Datei Zeilenweise eingespeichert werden
 void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent) {
-	
 	CStdioFile csfFile;
 	if (std::ifstream(path).good())
 	{
@@ -453,6 +455,13 @@ void ConvertHeidenhain::startMachineCycle(CString line,bool &foundOpCycle,CStrin
 	convertedFileContent.Add(mw_op_comment);
 	convertedFileContent.Add(mw_tool_name);
 	convertedFileContent.Add(mw_tool_comment);
+	convertedFileContent.Add(mw_transform);
+	convertedFileContent.Add(mw_toolpath_transform);
+	convertedFileContent.Add(shortestpath);
+	convertedFileContent.Add(toolChangeTime);
+	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
+
+	
 	if (foundRTCPOFF == true) {
 		convertedFileContent.Add(_T("MW_RTCP OFF"));
 	}
@@ -574,7 +583,9 @@ CString ConvertHeidenhain::cutAtSpace(CString line,int spaces) {
 	}
 	return labelName;
 }
+
 /// <summary>
+/// Schneidet den Eingegebenen String ab und returned das Ergebnis zurück.
 /// 
 /// </summary>
 /// <param name="line"></param>
@@ -626,7 +637,7 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 				findComment(file.GetAt(i));
 			}
 			else if (file.GetAt(i).Find(_T("TOOL CALL")) != -1) {
-				startMachineCycle(file.GetAt(i), foundOpCycle, indexString);
+				//startMachineCycle(file.GetAt(i), foundOpCycle, indexString);
 			}
 			else if (file.GetAt(i).Find(_T("FN")) != -1) {
 				findFeedRate(file.GetAt(i));
@@ -635,7 +646,13 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 				findCircle(file.GetAt(i), file.GetAt(i + 1));
 				i++;
 			}
+			else if (file.GetAt(i).Find(_T("CYCL DEF")) != -1) {
+				findCycleDef(file.GetAt(i + 1), file.GetAt(i + 2), file.GetAt(i + 3));
+				outputTransform(file.GetAt(i));
+				i += 3;
+			}
 			else if (file.GetAt(i).Find(_T("LBL 0")) != -1) {
+				findOtherLine(file.GetAt(i));
 				break;
 			}
 			else {
@@ -646,15 +663,18 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 }
 
 /// <summary>
-/// 
+/// Ausgabe für die Zeilen MW_TOOLPATH_TRANSFORM und MW_TRANSFORM
+/// Bsp aus dem .cl
+/// MW_TRANSFORM holder_transform (1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)
+///	MW_TOOLPATH_TRANSFORM(1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 100., 0, 0, 0, 1)
 /// </summary>
 /// @param [line]
 void ConvertHeidenhain::outputTransform(CString line) {
-	CString mw_transform = _T("MW_TRANSFORM holder_transform (1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)");
+	mw_transform = _T("MW_TRANSFORM holder_transform (1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)");
 	mw_toolpath_transform = _T("MW_TOOLPATH_TRANSFORM (") + xx + _T(".,") + xy + _T(".,") + xz + _T(".,") + tx + _T(".,") + 
 		yx + _T(",") + yy + _T(".,") + yz + _T(".,") + ty + _T(".,") + zx + _T(".,") + zy + _T(".,") + zz + _T(".,") + tz+_T(",0,0,0,1)");
-	moveLines.Add(mw_transform);
-	moveLines.Add(mw_toolpath_transform);
+	//convertedFileContent.Add(mw_transform);
+	//convertedFileContent.Add(mw_toolpath_transform);
 }
 
 /// <summary>
@@ -683,13 +703,13 @@ void ConvertHeidenhain::findCycleDef(CString lineX,CString lineY,CString lineZ) 
 		}
 		if (creoConfiContent.GetAt(i).Find(_T("TRANS")) != -1) {
 			foundTransform = true;
-		}
-		
+		}	
 	}
 }
 
 /// <summary>
-/// 
+/// Befüllt alle Variablen die für das toolpathtransform nötig sind.
+/// Die Daten für die Befüllung stehen in der creo2mw.ini
 /// </summary>
 /// @param [trans]
 /// @param [line]
@@ -745,7 +765,8 @@ void ConvertHeidenhain::updateTrans(CString trans, CString line) {
 }
 
 /// <summary>
-/// 
+/// Befüllt String Variablen welche eine Zahl representieren.
+/// Dies Können die X,Y und Z Koordinaten sein oder die Transformationspositionen
 /// </summary>
 /// @param [line]
 /// @returns[filling]
@@ -757,8 +778,22 @@ CString ConvertHeidenhain::fillPosition(CString line) {
 	return filling;
 }
 
+/// <summary>
+/// Liest die config.txt Datei und Speichert alle Informationen in die unten angezeigten Variablen ein.
+/// </summary>
 void ConvertHeidenhain::readConfigFile() {
 	CString configPath = findSubFilesPath(_T("config.txt"));
 	openSubFiles(configPath, configFile);
-
+	version = cutAtSpace(configFile.GetAt(0),1);
+	unit = cutAtSpace(configFile.GetAt(1), 1);
+	initial = cutAtSpace(configFile.GetAt(2), 1);
+	outputname = cutAtSpace(configFile.GetAt(3), 1);
+	safepoint = cutAtSpace(configFile.GetAt(4), 1);
+	headadapter = cutAtSpace(configFile.GetAt(5), 1);
+	postconfig = cutAtSpace(configFile.GetAt(6), 1);
+	shortestpath = cutAtSpace(configFile.GetAt(7), 1);
+	toolChangeTime = cutAtSpace(configFile.GetAt(8), 1);
+	toolChangePoint_x = cutAtSpace(configFile.GetAt(9), 1);
+	toolChangePoint_y = cutAtSpace(configFile.GetAt(10), 1);
+	toolChangePoint_z = cutAtSpace(configFile.GetAt(11), 1);
 }
