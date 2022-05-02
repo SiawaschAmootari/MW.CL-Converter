@@ -39,6 +39,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	CString tool_repositoryPath = findSubFilesPath(tool_repositoryName);
 	CString creoConfiPath = findSubFilesPath(creoConfiName);
 	CString indexString;
+
 	openSubFiles(tool_repositoryPath ,tool_repositoryContent);
 	openSubFiles(creoConfiPath,creoConfiContent);
 	file.Copy(fileContent);
@@ -63,7 +64,13 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			
 		}
 		else if (fileContent.GetAt(i).Find(_T("TOOL CALL")) != -1) {
-			startMachineCycle(fileContent.GetAt(i),foundOpCycle,indexString);
+			op_number_index++;
+			indexString.Format(_T("%d"), op_number_index);
+			mw_op_number_list.Add(mw_op_number + _T(" ") + indexString);
+			if (foundOpCycle == true) {
+				startMachineCycle(fileContent.GetAt(i), foundOpCycle, indexString);
+			}
+			foundOpCycle = true;
 		}
 		else if (fileContent.GetAt(i).Find(_T("FN")) != -1) {
 			findFeedRate(fileContent.GetAt(i));
@@ -75,12 +82,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		else if (fileContent.GetAt(i).Find(_T("CALL LBL")) != -1) {
 			jumpToLabel(fileContent.GetAt(i));
 		}
-		/*else if (fileContent.GetAt(i).Find(_T("CYCL DEF")) != -1) {
-			findCycleDef(fileContent.GetAt(i+1), fileContent.GetAt(i + 2), fileContent.GetAt(i + 3));
-			outputTransform(fileContent.GetAt(i));
-			startMachineCycle(fileContent.GetAt(i), foundOpCycle, indexString);
-			i += 3;
-		}*/else if (fileContent.GetAt(i).Find(_T(";")) != -1) {
+		else if (fileContent.GetAt(i).Find(_T(";")) != -1) {
 			//nichts!
 		}
 		else if (fileContent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
@@ -89,10 +91,11 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			//findOtherLine(fileContent.GetAt(i));
 		}
 	}
-
-	for (int i = 0; i < moveLines.GetSize(); i++) {
-		convertedFileContent.Add(moveLines.GetAt(i));
-	}
+	
+	startMachineCycle(indexString);
+	//for (int i = 0; i < moveLines.GetSize(); i++) {
+	//	convertedFileContent.Add(moveLines.GetAt(i));
+	//}
 	convertedFileContent.Add(mw_op_end);
 	convertedFileContent.Add(_T("MW_STOP"));
 	convertedFileContent.Add(_T("<!-- || ====================================================================== || -->"));
@@ -414,22 +417,24 @@ void ConvertHeidenhain::findToolName(CString toolNameComment) {
 /// </summary>
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 void ConvertHeidenhain::findComment(CString line) {
-	mw_op_comment = _T("MW_OP_COMMENT ");
+	CString mw_op_comment_string = _T("MW_OP_COMMENT ");
 	bool foundComment = false;
 	for (int i = 0; i < line.GetLength(); i++) {
+		if (foundComment == true && line.GetAt(i) == '-' || i == line.GetAllocLength() - 1) {
+			mw_op_comment_string.AppendChar('\"');
+			break;
+		}
 		if (line.GetAt(i)=='-'  && foundComment == false) {
 			foundComment = true;
-			mw_op_comment.AppendChar('\"');
+			mw_op_comment_string.AppendChar('\"');
 			i++;
 		}
 		if (foundComment == true) {
-			mw_op_comment.AppendChar(line.GetAt(i));
-		}
-		if (foundComment == true && line.GetAt(i) == '-'|| i == line.GetAllocLength()-1) {
-			mw_op_comment.AppendChar('\"');
-			break;
-		}
+			mw_op_comment_string.AppendChar(line.GetAt(i));
+		}	
 	}
+
+	mw_op_comment.Add(mw_op_comment_string);
 }
 
 /// <summary>
@@ -440,19 +445,13 @@ void ConvertHeidenhain::findComment(CString line) {
 /// @param [indexString] 
 void ConvertHeidenhain::startMachineCycle(CString line,bool &foundOpCycle,CString indexString) {
 	findToolCall(line);
-	if (foundOpCycle == true) {
-		for (int i = 0; i < moveLines.GetSize(); i++) {
-			convertedFileContent.Add(moveLines.GetAt(i));
-		}
-		moveLines.RemoveAll();
-		convertedFileContent.Add(mw_op_end);
-		convertedFileContent.Add(_T("============================================================================================="));
-	}
+
 	convertedFileContent.Add(mw_op_start);
-	op_number_index++;
-	indexString.Format(_T("%d"), op_number_index);
-	convertedFileContent.Add(mw_op_number + _T(" ") + indexString);
-	convertedFileContent.Add(mw_op_comment);
+	//op_number_index++;
+	//indexString.Format(_T("%d"), op_number_index);
+	//convertedFileContent.Add(mw_op_number + _T(" ") + indexString);
+	convertedFileContent.Add(mw_op_number_list.GetAt(0));
+	convertedFileContent.Add(mw_op_comment.GetAt(0));
 	convertedFileContent.Add(mw_tool_name);
 	convertedFileContent.Add(mw_tool_comment);
 	convertedFileContent.Add(mw_transform);
@@ -461,11 +460,49 @@ void ConvertHeidenhain::startMachineCycle(CString line,bool &foundOpCycle,CStrin
 	convertedFileContent.Add(toolChangeTime);
 	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
 
-	
 	if (foundRTCPOFF == true) {
 		convertedFileContent.Add(_T("MW_RTCP OFF"));
 	}
+	
+	for (int i = 0; i < moveLines.GetSize(); i++) {
+		convertedFileContent.Add(moveLines.GetAt(i));
+	}
+	moveLines.RemoveAll();
+	convertedFileContent.Add(mw_op_end);
+	convertedFileContent.Add(_T("<!=============================================================================================!>"));
+
 	foundOpCycle = true;
+}
+
+void ConvertHeidenhain::startMachineCycle(CString indexString) {
+	//findToolCall(line);
+
+	convertedFileContent.Add(mw_op_start);
+	//op_number_index++;
+	//indexString.Format(_T("%d"), op_number_index);
+	convertedFileContent.Add(mw_op_number_list.GetAt(0));
+	convertedFileContent.Add(mw_op_comment.GetAt(mw_op_comment.GetSize()-1));
+	convertedFileContent.Add(mw_tool_name);
+	convertedFileContent.Add(mw_tool_comment);
+	convertedFileContent.Add(mw_transform);
+	convertedFileContent.Add(mw_toolpath_transform);
+	convertedFileContent.Add(shortestpath);
+	convertedFileContent.Add(toolChangeTime);
+	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
+
+	if (foundRTCPOFF == true) {
+		convertedFileContent.Add(_T("MW_RTCP OFF"));
+	}
+
+	//if (foundOpCycle == true) {
+	for (int i = 0; i < moveLines.GetSize(); i++) {
+		convertedFileContent.Add(moveLines.GetAt(i));
+	}
+	moveLines.RemoveAll();
+	convertedFileContent.Add(mw_op_end);
+	convertedFileContent.Add(_T("<!=============================================================================================!>"));
+	//}
+	//foundOpCycle = true;
 }
 
 /// <summary>

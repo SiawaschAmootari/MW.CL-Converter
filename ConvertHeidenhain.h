@@ -31,6 +31,7 @@ public:
 	void findToolName(CString toolNameComment);
 	void findComment(CString line);
 	void startMachineCycle(CString line, bool& foundOpCycle, CString indexString);
+	void startMachineCycle(CString indexString);
 	void findCircle(CString lineCC, CString lineC);
 	void findOtherLine(CString line);
 	void findOtherLine(CString line, char c);
@@ -103,7 +104,8 @@ public:
 	//Hardcoded Strings
 	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID   MOVE=");
 	CString mw_other_line = _T("MW_MACHMOVE RAPID TIME.1 MOVE=");
-	CString mw_op_comment;
+	CStringArray mw_op_comment;
+	CStringArray mw_op_number_list;
 	CString mw_relmove_rapid = _T("MW_RELMOVE RAPID");
 	CString mw_relmove_feed = _T("MW_RELMOVE FEED");
 	CString time_move = _T(" TIME.1 MOVE=");
