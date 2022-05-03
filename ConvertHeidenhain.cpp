@@ -64,9 +64,11 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			
 		}
 		else if (fileContent.GetAt(i).Find(_T("TOOL CALL")) != -1) {
+			findToolCall(fileContent.GetAt(i));
 			op_number_index++;
 			indexString.Format(_T("%d"), op_number_index);
 			mw_op_number_list.Add(mw_op_number + _T(" ") + indexString);
+			indexString = _T("");
 			if (foundOpCycle == true) {
 				startMachineCycle(fileContent.GetAt(i), foundOpCycle, indexString);
 			}
@@ -83,29 +85,93 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			jumpToLabel(fileContent.GetAt(i));
 		}
 		else if (fileContent.GetAt(i).Find(_T(";")) != -1) {
-			//nichts!
+			//ignore line
 		}
 		else if (fileContent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
 			break;
 		}else{
-			//findOtherLine(fileContent.GetAt(i));
+			//ignore line
 		}
 	}
 	
 	startMachineCycle(indexString);
-	//for (int i = 0; i < moveLines.GetSize(); i++) {
-	//	convertedFileContent.Add(moveLines.GetAt(i));
-	//}
-	convertedFileContent.Add(mw_op_end);
 	convertedFileContent.Add(_T("MW_STOP"));
-	convertedFileContent.Add(_T("<!-- || ====================================================================== || -->"));
-	convertedFileContent.Add(_T("<!-- || ====================================================================== || -->"));
+	
 }
 
 /// <summary>
-/// 
+/// @startMachineCycle fügt den Anfangskopf einer Machinenoperation hinzu
 /// </summary>
-/// <returns></returns>
+/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
+/// @param [foundOpCycle] 
+/// @param [indexString] 
+void ConvertHeidenhain::startMachineCycle(CString line, bool& foundOpCycle, CString indexString) {
+
+	convertedFileContent.Add(mw_op_start);
+	convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
+	convertedFileContent.Add(mw_op_comment.GetAt(mw_list_counter));
+	convertedFileContent.Add(headadapter);
+	convertedFileContent.Add(postconfig);
+	convertedFileContent.Add(mw_tool_name_list.GetAt(mw_list_counter));  //////////////////////////
+	convertedFileContent.Add(mw_tool_comment);
+	convertedFileContent.Add(mw_transform);
+	convertedFileContent.Add(mw_toolpath_transform);
+	convertedFileContent.Add(shortestpath);
+	
+	convertedFileContent.Add(toolChangeTime);
+	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
+
+	if (foundRTCPOFF == true) {
+		convertedFileContent.Add(_T("MW_RTCP OFF"));
+	}
+
+	for (int i = 0; i < moveLines.GetSize(); i++) {
+		convertedFileContent.Add(moveLines.GetAt(i));
+	}
+	moveLines.RemoveAll();
+	convertedFileContent.Add(mw_op_end);
+	convertedFileContent.Add(_T("<!=============================================================================================!>"));
+
+	mw_list_counter++;
+}
+
+void ConvertHeidenhain::startMachineCycle(CString indexString) {
+	
+	convertedFileContent.Add(mw_op_start);
+	convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
+	convertedFileContent.Add(mw_op_comment.GetAt(mw_list_counter));
+	convertedFileContent.Add(headadapter);
+	convertedFileContent.Add(postconfig);
+	convertedFileContent.Add(mw_tool_name_list.GetAt(mw_list_counter));
+	convertedFileContent.Add(mw_tool_comment);
+	convertedFileContent.Add(mw_transform);
+	convertedFileContent.Add(mw_toolpath_transform);
+	convertedFileContent.Add(shortestpath);
+	convertedFileContent.Add(toolChangeTime);
+	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
+
+	if (foundRTCPOFF == true) {
+		convertedFileContent.Add(_T("MW_RTCP OFF"));
+	}
+
+
+	for (int i = 0; i < moveLines.GetSize(); i++) {
+		convertedFileContent.Add(moveLines.GetAt(i));
+	}
+	moveLines.RemoveAll();
+	convertedFileContent.Add(mw_op_end);
+	convertedFileContent.Add(_T("<!=============================================================================================!>"));
+	mw_list_counter++;
+}
+
+/// <summary>
+/// Die Methode ist für die "INITIAL" Operation des .cl files. Ähnlich wie startConverting geht es Zeile für Zeile durch das
+/// ausgesuchte file und convertiert Zeile für Zeile bis der erste TOOL CALL eingelesen wird, dann wird die Methode beendet.
+/// Der Bereich der Schleife geht von der ersten Zeile der ausgesuchten Datei bis zum ersten TOOL CALL.
+/// </summary>
+/// @returns indexOfFirstToolCall beschreibt den index mit dem die Methode startConverting arbeitet.
+/// Der Sinn dahinter ist das startConverting nicht wieder von Anfang der Datei startet sondern vor dem
+/// ersten TOOL CALL anfängt
 int ConvertHeidenhain::initialComment() {
 	int indexOfFirstToolCall = 0;
 	convertedFileContent.Add(version);
@@ -139,8 +205,6 @@ int ConvertHeidenhain::initialComment() {
 			i++;
 		}
 		else if (file.GetAt(i).Find(_T("CYCL DEF")) != -1) {
-			//findCycleDef(file.GetAt(i + 1), file.GetAt(i + 2), file.GetAt(i + 3));
-			//outputTransform(file.GetAt(i));
 			findOtherLine(file.GetAt(i));
 			findOtherLine(file.GetAt(i + 1));
 			findOtherLine(file.GetAt(i + 2));
@@ -162,7 +226,6 @@ int ConvertHeidenhain::initialComment() {
 	convertedFileContent.Add(mw_op_end);
 	moveLines.RemoveAll();
 	return indexOfFirstToolCall;
-	//---------> here
 }
 
 /// <summary>
@@ -327,69 +390,6 @@ void ConvertHeidenhain::findToolCall(CString line) {
 }
 
 /// <summary>
-/// @openSubFiles öffnet die Nebenfiles welche für die vollständige Übersetzung benötigt werden
-/// </summary>
-/// @param [path] beinhaltet den Pfad des .tap Files welches zuvor über den "Open" Button geöffnet wurde
-/// @param [subFileContent] ist die Adresse eines leerer CStringArrays in dem der Inhalt der ausgewählten Datei Zeilenweise eingespeichert werden
-void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent) {
-	CStdioFile csfFile;
-	if (std::ifstream(path).good())
-	{
-		try
-		{
-			csfFile.Open(path, CStdioFile::modeRead);
-			CString sLine = _T("");
-			bool bRead;
-			CString sFilecontent = _T("");
-
-			while (true)
-			{
-				bRead = csfFile.ReadString(sLine);
-				if (bRead == false)
-				{
-					break;
-				}
-				subFileContent.Add(sLine);
-			}
-			csfFile.Close();
-			CStringArray firstHundredLines;
-		}
-		catch (const std::out_of_range& )
-		{
-			m_LIST_MESSAGES.InsertString(0, _T("No file selected"));
-		}
-		catch (const std::invalid_argument& )
-		{
-			m_LIST_MESSAGES.InsertString(0, _T("Invalid file"));
-		}
-	}
-	else
-	{
-		m_LIST_MESSAGES.InsertString(0, _T("Error: filepath is wrong"));
-		m_LIST_MESSAGES.InsertString(0, path);
-	}
-}
-
-/// <summary>
-/// @findSubFilesPath Schneided den Datei Pfad des .tap files aus, wird benötigt um die Subfiles automatisch zu öffnen.
-/// </summary>
-/// @param [fileName] der Dateiname der neuen Datei
-/// @returns [newFilePath] Der neue Pfad für die SubFiles
-CString ConvertHeidenhain::findSubFilesPath(CString fileName) {	
-	CString newFilePath = path;
-	int index=0;
-	for (int i = newFilePath.GetLength() - 1; i > 0; i--) {
-		if (newFilePath.GetAt(i) == '\\') {
-			break;
-		}		//Pfad des Hauptprogramm wird genutzt um den Pfad des Subprogramms zu erstellen
-		newFilePath.Delete(i, 1);
-	}
-	//newFilePath.Delete(index, 1);
-	newFilePath.Append(fileName);
-	return newFilePath;
-}
-
-/// <summary>
 /// @findToolName filtert den namen des Werkzeugstückes aus 
 /// </summary>
 /// @param [toolNameComment] 
@@ -404,12 +404,14 @@ void ConvertHeidenhain::findToolName(CString toolNameComment) {
 			break;
 		}
 	}
+
 	mw_tool_comment.Append(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) + 1));
 	mw_tool_name.Append(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 2));
 	mw_tool_name.Append(_T(" USE_NUMBER "));
 	substring = tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).Right(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).GetLength() -
 		(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).Find(_T(" ")) + 1));
 	mw_tool_name.Append(substring);
+	mw_tool_name_list.Add(mw_tool_name);
 }
 
 /// <summary>
@@ -435,74 +437,6 @@ void ConvertHeidenhain::findComment(CString line) {
 	}
 
 	mw_op_comment.Add(mw_op_comment_string);
-}
-
-/// <summary>
-/// @startMachineCycle fügt den Anfangskopf einer Machinenoperation hinzu
-/// </summary>
-/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
-/// @param [foundOpCycle] 
-/// @param [indexString] 
-void ConvertHeidenhain::startMachineCycle(CString line,bool &foundOpCycle,CString indexString) {
-	findToolCall(line);
-
-	convertedFileContent.Add(mw_op_start);
-	//op_number_index++;
-	//indexString.Format(_T("%d"), op_number_index);
-	//convertedFileContent.Add(mw_op_number + _T(" ") + indexString);
-	convertedFileContent.Add(mw_op_number_list.GetAt(0));
-	convertedFileContent.Add(mw_op_comment.GetAt(0));
-	convertedFileContent.Add(mw_tool_name);
-	convertedFileContent.Add(mw_tool_comment);
-	convertedFileContent.Add(mw_transform);
-	convertedFileContent.Add(mw_toolpath_transform);
-	convertedFileContent.Add(shortestpath);
-	convertedFileContent.Add(toolChangeTime);
-	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
-
-	if (foundRTCPOFF == true) {
-		convertedFileContent.Add(_T("MW_RTCP OFF"));
-	}
-	
-	for (int i = 0; i < moveLines.GetSize(); i++) {
-		convertedFileContent.Add(moveLines.GetAt(i));
-	}
-	moveLines.RemoveAll();
-	convertedFileContent.Add(mw_op_end);
-	convertedFileContent.Add(_T("<!=============================================================================================!>"));
-
-	foundOpCycle = true;
-}
-
-void ConvertHeidenhain::startMachineCycle(CString indexString) {
-	//findToolCall(line);
-
-	convertedFileContent.Add(mw_op_start);
-	//op_number_index++;
-	//indexString.Format(_T("%d"), op_number_index);
-	convertedFileContent.Add(mw_op_number_list.GetAt(0));
-	convertedFileContent.Add(mw_op_comment.GetAt(mw_op_comment.GetSize()-1));
-	convertedFileContent.Add(mw_tool_name);
-	convertedFileContent.Add(mw_tool_comment);
-	convertedFileContent.Add(mw_transform);
-	convertedFileContent.Add(mw_toolpath_transform);
-	convertedFileContent.Add(shortestpath);
-	convertedFileContent.Add(toolChangeTime);
-	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
-
-	if (foundRTCPOFF == true) {
-		convertedFileContent.Add(_T("MW_RTCP OFF"));
-	}
-
-	//if (foundOpCycle == true) {
-	for (int i = 0; i < moveLines.GetSize(); i++) {
-		convertedFileContent.Add(moveLines.GetAt(i));
-	}
-	moveLines.RemoveAll();
-	convertedFileContent.Add(mw_op_end);
-	convertedFileContent.Add(_T("<!=============================================================================================!>"));
-	//}
-	//foundOpCycle = true;
 }
 
 /// <summary>
@@ -582,6 +516,7 @@ void ConvertHeidenhain::findOtherLine(CString line) {
 	convertedLine.Append(line);
 	moveLines.Add(convertedLine);
 }
+
 /// <summary>
 /// 
 /// </summary>
@@ -611,19 +546,18 @@ CString ConvertHeidenhain::cutAtSpace(CString line,int spaces) {
 	int spaceCount = 0;
 	CString labelName = _T("");
 	for (int i = 0; i < line.GetLength(); i++) {
-		if (line.GetAt(i) == ' ') {
-			spaceCount++;
-		}
 		if (spaceCount >= spaces) {
 			labelName.AppendChar(line.GetAt(i));
 		}
+		if (line.GetAt(i) == ' ') {
+			spaceCount++;
+		}	
 	}
 	return labelName;
 }
 
 /// <summary>
 /// Schneidet den Eingegebenen String ab und returned das Ergebnis zurück.
-/// 
 /// </summary>
 /// <param name="line"></param>
 /// <param name="spaces"></param>
@@ -642,7 +576,6 @@ CString ConvertHeidenhain::cutAtSpace(CString line, int spaces, char c) {
 		if (spaceCount >= spaces) {
 			labelName.AppendChar(line.GetAt(i));
 		}
-		
 	}
 	return labelName;
 }
@@ -745,6 +678,103 @@ void ConvertHeidenhain::findCycleDef(CString lineX,CString lineY,CString lineZ) 
 }
 
 /// <summary>
+/// Befüllt String Variablen welche eine Zahl representieren.
+/// Dies Können die X,Y und Z Koordinaten sein oder die Transformationspositionen
+/// </summary>
+/// @param [line]
+/// @returns[filling]
+CString ConvertHeidenhain::fillPosition(CString line) {
+	CString filling = _T("");
+	for (int i = 3; i < line.GetLength(); i++) {
+		filling.AppendChar(line.GetAt(i));
+	}
+	return filling;
+}
+
+/// <summary>
+/// Liest die config.txt Datei und Speichert alle Informationen in die unten angezeigten Variablen ein.
+/// </summary>
+void ConvertHeidenhain::readConfigFile() {
+	CString configPath = findSubFilesPath(_T("config.txt"));
+	openSubFiles(configPath, configFile);
+	version = cutAtSpace(configFile.GetAt(0),1);
+	unit = cutAtSpace(configFile.GetAt(1), 1);
+	initial = cutAtSpace(configFile.GetAt(2), 1);
+	outputname = cutAtSpace(configFile.GetAt(3), 1);
+	safepoint = cutAtSpace(configFile.GetAt(4), 1);
+	headadapter = cutAtSpace(configFile.GetAt(6), 1);
+	postconfig = cutAtSpace(configFile.GetAt(7), 1);
+	shortestpath = cutAtSpace(configFile.GetAt(8), 1);
+	toolChangeTime = cutAtSpace(configFile.GetAt(9), 1);
+	toolChangePoint_x = cutAtSpace(configFile.GetAt(10), 1);
+	toolChangePoint_y = cutAtSpace(configFile.GetAt(11), 1);
+	toolChangePoint_z = cutAtSpace(configFile.GetAt(12), 1);
+}
+
+/// <summary>
+/// @openSubFiles öffnet die Nebenfiles welche für die vollständige Übersetzung benötigt werden
+/// </summary>
+/// @param [path] beinhaltet den Pfad des .tap Files welches zuvor über den "Open" Button geöffnet wurde
+/// @param [subFileContent] ist die Adresse eines leerer CStringArrays in dem der Inhalt der ausgewählten Datei Zeilenweise eingespeichert werden
+void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent) {
+	CStdioFile csfFile;
+	if (std::ifstream(path).good())
+	{
+		try
+		{
+			csfFile.Open(path, CStdioFile::modeRead);
+			CString sLine = _T("");
+			bool bRead;
+			CString sFilecontent = _T("");
+
+			while (true)
+			{
+				bRead = csfFile.ReadString(sLine);
+				if (bRead == false)
+				{
+					break;
+				}
+				subFileContent.Add(sLine);
+			}
+			csfFile.Close();
+			CStringArray firstHundredLines;
+		}
+		catch (const std::out_of_range&)
+		{
+			m_LIST_MESSAGES.InsertString(0, _T("No file selected"));
+		}
+		catch (const std::invalid_argument&)
+		{
+			m_LIST_MESSAGES.InsertString(0, _T("Invalid file"));
+		}
+	}
+	else
+	{
+		m_LIST_MESSAGES.InsertString(0, _T("Error: filepath is wrong"));
+		m_LIST_MESSAGES.InsertString(0, path);
+	}
+}
+
+/// <summary>
+/// @findSubFilesPath Schneided den Datei Pfad des .tap files aus, wird benötigt um die Subfiles automatisch zu öffnen.
+/// </summary>
+/// @param [fileName] der Dateiname der neuen Datei
+/// @returns [newFilePath] Der neue Pfad für die SubFiles
+CString ConvertHeidenhain::findSubFilesPath(CString fileName) {
+	CString newFilePath = path;
+	int index = 0;
+	for (int i = newFilePath.GetLength() - 1; i > 0; i--) {
+		if (newFilePath.GetAt(i) == '\\') {
+			break;
+		}//Pfad des Hauptprogramm wird genutzt um den Pfad des Subprogramms zu erstellen
+		newFilePath.Delete(i, 1);
+	}
+	//newFilePath.Delete(index, 1);
+	newFilePath.Append(fileName);
+	return newFilePath;
+}
+
+/// <summary>
 /// Befüllt alle Variablen die für das toolpathtransform nötig sind.
 /// Die Daten für die Befüllung stehen in der creo2mw.ini
 /// </summary>
@@ -776,7 +806,7 @@ void ConvertHeidenhain::updateTrans(CString trans, CString line) {
 		yy = fillPosition(line);
 	}
 	else if (trans == _T("yz")) {
-		yz= _T("");
+		yz = _T("");
 		yz = fillPosition(line);
 	}
 	else if (trans == _T("ty")) {
@@ -784,7 +814,7 @@ void ConvertHeidenhain::updateTrans(CString trans, CString line) {
 		ty = fillPosition(line);
 	}
 	else if (trans == _T("zx")) {
-		zx= _T("");
+		zx = _T("");
 		zx = fillPosition(line);
 	}
 	else if (trans == _T("zy")) {
@@ -799,38 +829,4 @@ void ConvertHeidenhain::updateTrans(CString trans, CString line) {
 		tz = _T("");
 		tz = fillPosition(line);
 	}
-}
-
-/// <summary>
-/// Befüllt String Variablen welche eine Zahl representieren.
-/// Dies Können die X,Y und Z Koordinaten sein oder die Transformationspositionen
-/// </summary>
-/// @param [line]
-/// @returns[filling]
-CString ConvertHeidenhain::fillPosition(CString line) {
-	CString filling = _T("");
-	for (int i = 3; i < line.GetLength(); i++) {
-		filling.AppendChar(line.GetAt(i));
-	}
-	return filling;
-}
-
-/// <summary>
-/// Liest die config.txt Datei und Speichert alle Informationen in die unten angezeigten Variablen ein.
-/// </summary>
-void ConvertHeidenhain::readConfigFile() {
-	CString configPath = findSubFilesPath(_T("config.txt"));
-	openSubFiles(configPath, configFile);
-	version = cutAtSpace(configFile.GetAt(0),1);
-	unit = cutAtSpace(configFile.GetAt(1), 1);
-	initial = cutAtSpace(configFile.GetAt(2), 1);
-	outputname = cutAtSpace(configFile.GetAt(3), 1);
-	safepoint = cutAtSpace(configFile.GetAt(4), 1);
-	headadapter = cutAtSpace(configFile.GetAt(5), 1);
-	postconfig = cutAtSpace(configFile.GetAt(6), 1);
-	shortestpath = cutAtSpace(configFile.GetAt(7), 1);
-	toolChangeTime = cutAtSpace(configFile.GetAt(8), 1);
-	toolChangePoint_x = cutAtSpace(configFile.GetAt(9), 1);
-	toolChangePoint_y = cutAtSpace(configFile.GetAt(10), 1);
-	toolChangePoint_z = cutAtSpace(configFile.GetAt(11), 1);
 }

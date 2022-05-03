@@ -256,7 +256,6 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 {
 	ConvertHeidenhain convert;
 
-	
 	convert.startConverting(m_sFilecontent, labelIndex,g_sFilePath);
 	CString sFilecontent;
 	CStringArray firstHundredLines;
@@ -267,8 +266,8 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
 	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
 
-	//for (int i = 0; i < convert.configFile.GetSize(); i++) {
-	//	firstHundredLines.Add(convert.configFile.GetAt(i));
+	//for (int i = 0; i < convert.mw_op_number_list.GetSize(); i++) {
+	//	firstHundredLines.Add(convert.mw_op_number_list.GetAt(i));
 	//}
 	//for (int i = 0; i < convert.creoConfiContent.GetSize(); i++) {
 	//	firstHundredLines.Add(convert.creoConfiContent.GetAt(i));
