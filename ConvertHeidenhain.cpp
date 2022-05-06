@@ -64,6 +64,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			
 		}
 		else if (fileContent.GetAt(i).Find(_T("TOOL CALL")) != -1) {
+			findOtherLine(fileContent.GetAt(i));
 			findToolCall(fileContent.GetAt(i));
 			op_number_index++;
 			indexString.Format(_T("%d"), op_number_index);
@@ -90,7 +91,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		else if (fileContent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
 			break;
 		}else{
-			//ignore line
+			findOtherLine(fileContent.GetAt(i));
 		}
 	}
 	
@@ -100,7 +101,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 }
 
 /// <summary>
-/// @startMachineCycle fügt den Anfangskopf einer Machinenoperation hinzu
+/// @startMachineCycle fügt den Anfangskopf einer Machinenoperation hinzu, diese Methode wird im laufe der Entwicklung durch die untrige Methode ersetzt!!!!
 /// </summary>
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 /// @param [foundOpCycle] 
@@ -112,18 +113,18 @@ void ConvertHeidenhain::startMachineCycle(CString line, bool& foundOpCycle, CStr
 	convertedFileContent.Add(mw_op_comment.GetAt(mw_list_counter));
 	convertedFileContent.Add(headadapter);
 	convertedFileContent.Add(postconfig);
+	convertedFileContent.Add(outputname);
+	convertedFileContent.Add(safepoint);
 	convertedFileContent.Add(mw_tool_name_list.GetAt(mw_list_counter));  //////////////////////////
 	convertedFileContent.Add(mw_tool_comment);
 	convertedFileContent.Add(mw_transform);
 	convertedFileContent.Add(mw_toolpath_transform);
 	convertedFileContent.Add(shortestpath);
-	
-	convertedFileContent.Add(toolChangeTime);
-	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
-
 	if (foundRTCPOFF == true) {
 		convertedFileContent.Add(_T("MW_RTCP OFF"));
 	}
+	convertedFileContent.Add(toolChangeTime);
+	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
 
 	for (int i = 0; i < moveLines.GetSize(); i++) {
 		convertedFileContent.Add(moveLines.GetAt(i));
@@ -134,7 +135,10 @@ void ConvertHeidenhain::startMachineCycle(CString line, bool& foundOpCycle, CStr
 
 	mw_list_counter++;
 }
-
+/// <summary>
+/// 
+/// </summary>
+/// <param name="indexString"></param>
 void ConvertHeidenhain::startMachineCycle(CString indexString) {
 	
 	convertedFileContent.Add(mw_op_start);
@@ -142,18 +146,19 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 	convertedFileContent.Add(mw_op_comment.GetAt(mw_list_counter));
 	convertedFileContent.Add(headadapter);
 	convertedFileContent.Add(postconfig);
-	convertedFileContent.Add(mw_tool_name_list.GetAt(mw_list_counter));
+	convertedFileContent.Add(outputname);
+	convertedFileContent.Add(safepoint);
+	convertedFileContent.Add(mw_tool_name_list.GetAt(mw_list_counter));  //////////////////////////
 	convertedFileContent.Add(mw_tool_comment);
 	convertedFileContent.Add(mw_transform);
 	convertedFileContent.Add(mw_toolpath_transform);
 	convertedFileContent.Add(shortestpath);
-	convertedFileContent.Add(toolChangeTime);
-	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
 
 	if (foundRTCPOFF == true) {
 		convertedFileContent.Add(_T("MW_RTCP OFF"));
 	}
-
+	convertedFileContent.Add(toolChangeTime);
+	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
 
 	for (int i = 0; i < moveLines.GetSize(); i++) {
 		convertedFileContent.Add(moveLines.GetAt(i));
@@ -161,6 +166,7 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 	moveLines.RemoveAll();
 	convertedFileContent.Add(mw_op_end);
 	convertedFileContent.Add(_T("<!=============================================================================================!>"));
+
 	mw_list_counter++;
 }
 
@@ -180,6 +186,7 @@ int ConvertHeidenhain::initialComment() {
 	convertedFileContent.Add(_T("MW_OP_START"));
 	convertedFileContent.Add(initial);
 	convertedFileContent.Add(outputname);
+	convertedFileContent.Add(safepoint);
 
 	for (int i = 0; i < file.GetSize(); i++) {
 		if (file.GetAt(i).Find(_T("M129")) != -1) {
@@ -194,10 +201,11 @@ int ConvertHeidenhain::initialComment() {
 			findMovement(file.GetAt(i), i);
 		}
 		else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
+			findOtherLine(file.GetAt(i));
 			findComment(file.GetAt(i));
-
 		}
 		else if (file.GetAt(i).Find(_T("FN")) != -1) {
+			findOtherLine(file.GetAt(i));
 			findFeedRate(file.GetAt(i));
 		}
 		else if (file.GetAt(i).Find(_T("CC")) != -1) {
@@ -512,7 +520,7 @@ void ConvertHeidenhain::findOtherLine(CString line) {
 	line = cutAtSpace(line, 1);
 	convertedLine.Append(lineNumber);
 	convertedLine.Append(_T("#"));
-	line = cutAtSpace(line, 1);
+	line = cutAtSpace(line, 0);
 	convertedLine.Append(line);
 	moveLines.Add(convertedLine);
 }
@@ -526,7 +534,6 @@ void ConvertHeidenhain::findOtherLine(CString line, char c) {
 	CString convertedLine = _T("");
 	convertedLine.Append(mw_other_line);
 	CString lineNumber = findLineNr(line);
-	line = cutAtSpace(line, 1);
 	convertedLine.Append(lineNumber);
 	convertedLine.Append(_T("#"));
 	line = cutAtSpace(line, 1,c);
@@ -592,6 +599,7 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 	bool foundOpCycle = false;
 	int size = file.GetSize();
 	CString compareLabel;
+
 	for (int i = label_index; i < size; i++) {
 		if (file.GetAt(i).Find(labelName) != -1) {
 			compareLabel = cutAtSpace(file.GetAt(i),1);
@@ -617,6 +625,10 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 				i++;
 			}
 			else if (file.GetAt(i).Find(_T("CYCL DEF")) != -1) {
+				findOtherLine(file.GetAt(i));
+				findOtherLine(file.GetAt(i + 1));
+				findOtherLine(file.GetAt(i + 2));
+				findOtherLine(file.GetAt(i + 3));
 				findCycleDef(file.GetAt(i + 1), file.GetAt(i + 2), file.GetAt(i + 3));
 				outputTransform(file.GetAt(i));
 				i += 3;
@@ -642,7 +654,7 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 void ConvertHeidenhain::outputTransform(CString line) {
 	mw_transform = _T("MW_TRANSFORM holder_transform (1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)");
 	mw_toolpath_transform = _T("MW_TOOLPATH_TRANSFORM (") + xx + _T(".,") + xy + _T(".,") + xz + _T(".,") + tx + _T(".,") + 
-		yx + _T(",") + yy + _T(".,") + yz + _T(".,") + ty + _T(".,") + zx + _T(".,") + zy + _T(".,") + zz + _T(".,") + tz+_T(",0,0,0,1)");
+		yx + _T(".,") + yy + _T(".,") + yz + _T(".,") + ty + _T(".,") + zx + _T(".,") + zy + _T(".,") + zz + _T(".,") + tz+_T(".,0,0,0,1)");
 	//convertedFileContent.Add(mw_transform);
 	//convertedFileContent.Add(mw_toolpath_transform);
 }
