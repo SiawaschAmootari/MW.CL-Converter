@@ -29,7 +29,7 @@ public:
 	void openSubFiles(CString path, CStringArray& subFileContent);
 	void findFeedRate(CString line);
 	void findToolName(CString toolNameComment);
-	void findComment(CString line);
+	void findSequenceName(CString line);
 	void startMachineCycle(CString line, bool& foundOpCycle, CString indexString);
 	void startMachineCycle(CString indexString);
 	void findCircle(CString lineCC, CString lineC);
@@ -104,7 +104,7 @@ public:
 	
 	//Hardcoded Strings
 	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID   MOVE=");
-	CString mw_other_line = _T("MW_MACHMOVE RAPID TIME.1 MOVE=");
+	CString mw_other_line = _T("MW_MACHMOVE RAPID  TIME.1 MOVE=");
 	CStringArray mw_op_comment;
 	CStringArray mw_op_number_list;
 	CStringArray mw_tool_name_list;

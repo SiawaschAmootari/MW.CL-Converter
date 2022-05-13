@@ -60,8 +60,11 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			findMovement(fileContent.GetAt(i),i);
 		}
 		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength()-1) =='-') {
-			findComment(fileContent.GetAt(i));
+			findSequenceName(fileContent.GetAt(i));
 			
+		}
+		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength() - 1) != '-') {
+			//comment ignore line
 		}
 		else if (fileContent.GetAt(i).Find(_T("TOOL CALL")) != -1) {
 			findOtherLine(fileContent.GetAt(i));
@@ -76,6 +79,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			foundOpCycle = true;
 		}
 		else if (fileContent.GetAt(i).Find(_T("FN")) != -1) {
+			findOtherLine(fileContent.GetAt(i));
 			findFeedRate(fileContent.GetAt(i));
 		}
 		else if (fileContent.GetAt(i).Find(_T("CC")) != -1) {
@@ -97,7 +101,6 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	
 	startMachineCycle(indexString);
 	convertedFileContent.Add(_T("MW_STOP"));
-	
 }
 
 /// <summary>
@@ -190,19 +193,19 @@ int ConvertHeidenhain::initialComment() {
 
 	for (int i = 0; i < file.GetSize(); i++) {
 		if (file.GetAt(i).Find(_T("M129")) != -1) {
-			findOtherLine(file.GetAt(i),';');
+			findOtherLine(file.GetAt(i), ';');
 			foundRTCPOFF = true;
 		}
 		else if (file.GetAt(i).Find(_T("M127")) != -1) {
-			findOtherLine(file.GetAt(i),';');
+			findOtherLine(file.GetAt(i), ';');
 		}
 		else if (file.GetAt(i).Find(_T("L X")) != -1 || file.GetAt(i).Find(_T("L Y")) != -1 || file.GetAt(i).Find(_T("L Z")) != -1 ||
 			file.GetAt(i).Find(_T("L  X")) != -1 || file.GetAt(i).Find(_T("L  Y")) != -1 || file.GetAt(i).Find(_T("L  Z")) != -1) {
 			findMovement(file.GetAt(i), i);
 		}
 		else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
-			findOtherLine(file.GetAt(i));
-			findComment(file.GetAt(i));
+			//findOtherLine(file.GetAt(i));
+			findSequenceName(file.GetAt(i));
 		}
 		else if (file.GetAt(i).Find(_T("FN")) != -1) {
 			findOtherLine(file.GetAt(i));
@@ -220,12 +223,19 @@ int ConvertHeidenhain::initialComment() {
 			i += 3;
 		}
 		else if (file.GetAt(i).Find(_T(";")) != -1) {
-			//nichts!
+			//nothing
 		}
 		else if (file.GetAt(i).Find(_T("TOOL CALL")) != -1) {
+			findOtherLine(file.GetAt(i));
 			indexOfFirstToolCall = i;
 			break;
-		}		
+		}
+		else if (file.GetAt(i).Find(_T("* -")) != -1 || file.GetAt(i).Find(_T("BLK FORM") || file.GetAt(i).Find(_T("BEGIN")) != -1)){
+		//nothing
+		}
+		else {
+			findOtherLine(file.GetAt(i));
+		}
 	}
 
 	for (int i = 0; i < moveLines.GetSize(); i++) {
@@ -426,18 +436,18 @@ void ConvertHeidenhain::findToolName(CString toolNameComment) {
 /// @findComment markiert die Zeilen als Kommentare aus
 /// </summary>
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
-void ConvertHeidenhain::findComment(CString line) {
+void ConvertHeidenhain::findSequenceName(CString line) {
 	CString mw_op_comment_string = _T("MW_OP_COMMENT ");
 	bool foundComment = false;
 	for (int i = 0; i < line.GetLength(); i++) {
-		if (foundComment == true && line.GetAt(i) == '-' || i == line.GetAllocLength() - 1) {
+		if (foundComment == true && line.GetAt(i) == ' ' || i == line.GetAllocLength() - 2) {
 			mw_op_comment_string.AppendChar('\"');
 			break;
 		}
 		if (line.GetAt(i)=='-'  && foundComment == false) {
 			foundComment = true;
 			mw_op_comment_string.AppendChar('\"');
-			i++;
+			i=i+2;
 		}
 		if (foundComment == true) {
 			mw_op_comment_string.AppendChar(line.GetAt(i));
@@ -519,7 +529,7 @@ void ConvertHeidenhain::findOtherLine(CString line) {
 	CString lineNumber = findLineNr(line);
 	line = cutAtSpace(line, 1);
 	convertedLine.Append(lineNumber);
-	convertedLine.Append(_T("#"));
+	convertedLine.Append(_T("# "));
 	line = cutAtSpace(line, 0);
 	convertedLine.Append(line);
 	moveLines.Add(convertedLine);
@@ -535,7 +545,7 @@ void ConvertHeidenhain::findOtherLine(CString line, char c) {
 	convertedLine.Append(mw_other_line);
 	CString lineNumber = findLineNr(line);
 	convertedLine.Append(lineNumber);
-	convertedLine.Append(_T("#"));
+	convertedLine.Append(_T("# "));
 	line = cutAtSpace(line, 1,c);
 	convertedLine.Append(line);
 	moveLines.Add(convertedLine);
@@ -612,7 +622,7 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 				findMovement(file.GetAt(i), i);
 			}
 			else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
-				findComment(file.GetAt(i));
+				findSequenceName(file.GetAt(i));
 			}
 			else if (file.GetAt(i).Find(_T("TOOL CALL")) != -1) {
 				//startMachineCycle(file.GetAt(i), foundOpCycle, indexString);
