@@ -22,7 +22,7 @@ public:
 	//Methods
 	void readConfigFile();
 	void startConverting(CStringArray &fileContent,int& labelIndex ,CString filePath);
-	void findMovement(CString line,int index);
+	void findMovement(CString line,int index,bool isMachMove);
 	void fillCoordinates(CString line, char c, int index, CString& g_coordinate);
 	void addDecimalPlace(CString& line);
 	void findToolCall(CString line);
@@ -40,7 +40,8 @@ public:
 	void outputTransform(CString line);
 	void findCycleDef(CString lineX, CString lineY, CString lineZ);
 	void updateTrans(CString trans, CString line);
-	
+	void fillacCoordinates(CString line);
+
 	int initialComment();
 
 	CString cutAtSpace(CString line,int spaces);
@@ -55,6 +56,9 @@ public:
 	CString x_coordinate=_T("+0.000");
 	CString y_coordinate=_T("+0.000");
 	CString z_coordinate=_T("+0.000");
+	CString a_coordinate = _T("+0.000");
+	CString c_coordinate = _T("+0.000");
+
 
 	CString x_cycle = _T("+0.000");
 	CString y_cycle = _T("+0.000");
@@ -89,8 +93,8 @@ public:
 	CString shortestpath = _T("");
 	CString toolChangeTime = _T("");
 	CString toolChangePoint_x = _T("");
-	CString toolChangePoint_y = _T("");
 	CString toolChangePoint_z = _T("");
+	CString toolChangePoint_xy = _T("");
 
 	//-----------------------------------------
 

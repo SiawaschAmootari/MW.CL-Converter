@@ -14,7 +14,6 @@
 #include <thread>
 #include <atlstr.h>
 
-
 using namespace std;
 /// <summary>
 /// Leerer Konstruktor, wird nur in der NW.CL ConvertDlg.cpp Klasse genutzt um auf die Methoden deser Klasse
@@ -48,20 +47,32 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	int indexOfFirstToolCall = initialComment();
 	
 	for (int i = indexOfFirstToolCall; i < fileContent.GetSize(); i++) {
+
 		if (fileContent.GetAt(i).Find(_T("M129")) != -1) {
 			findOtherLine(fileContent.GetAt(i));
 			foundRTCPOFF = true;
+		}
+		else if (fileContent.GetAt(i).Find(_T("M05")) != -1) {
+			findOtherLine(fileContent.GetAt(i));
+			moveLines.Add(toolChangePoint_z);
+			moveLines.Add(toolChangePoint_xy);
+		}
+		else if (fileContent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
+			moveLines.Add(_T("MW_MACHMOVE RAPID  TIME.1 MOVE=91# END PGM planen MM"));
+			break;
 		}
 		else if (fileContent.GetAt(i).Find(_T("M127")) != -1) {
 			findOtherLine(fileContent.GetAt(i),';');
 		}
 		else if (fileContent.GetAt(i).Find(_T("L X")) != -1 || fileContent.GetAt(i).Find(_T("L Y")) != -1 || fileContent.GetAt(i).Find(_T("L Z")) != -1||
 			fileContent.GetAt(i).Find(_T("L  X")) != -1 || fileContent.GetAt(i).Find(_T("L  Y")) != -1 || fileContent.GetAt(i).Find(_T("L  Z")) != -1) {
-			findMovement(fileContent.GetAt(i),i);
+			findMovement(fileContent.GetAt(i),i,false);
+		}
+		else if (fileContent.GetAt(i).Find(_T("L A")) != -1|| fileContent.GetAt(i).Find(_T("L  A")) != -1) {
+			fillacCoordinates(fileContent.GetAt(i));
 		}
 		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength()-1) =='-') {
 			findSequenceName(fileContent.GetAt(i));
-			
 		}
 		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength() - 1) != '-') {
 			//comment ignore line
@@ -79,6 +90,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			foundOpCycle = true;
 		}
 		else if (fileContent.GetAt(i).Find(_T("FN")) != -1) {
+
 			findOtherLine(fileContent.GetAt(i));
 			findFeedRate(fileContent.GetAt(i));
 		}
@@ -92,9 +104,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		else if (fileContent.GetAt(i).Find(_T(";")) != -1) {
 			//ignore line
 		}
-		else if (fileContent.GetAt(i).Find(_T("PGM ENDE")) != -1) {
-			break;
-		}else{
+		else{
 			findOtherLine(fileContent.GetAt(i));
 		}
 	}
@@ -103,8 +113,31 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	convertedFileContent.Add(_T("MW_STOP"));
 }
 
+void ConvertHeidenhain::fillacCoordinates(CString line) {
+	CString convertedLine = _T("MW_MACHMOVE RAPID");
+	for (int i = 0; i < line.GetLength(); i++) {
+		fillCoordinates(line, 'A', i, a_coordinate);
+		fillCoordinates(line, 'C', i, c_coordinate);
+	}
+
+	addDecimalPlace(a_coordinate);
+	addDecimalPlace(c_coordinate);
+
+	convertedLine.Append(_T(" A") + a_coordinate);
+	convertedLine.Append(_T(" "));
+	convertedLine.Append(_T("C") + c_coordinate);
+	convertedLine.Append(_T(" "));
+
+	CString lineNr = findLineNr(line);
+	convertedLine.Append(_T(" TIME.1 MOVE="));
+	convertedLine.Append(lineNr);
+	line = cutAtSpace(line, 1);
+	moveLines.Add(convertedLine + _T(" #") + line);
+
+}
+
 /// <summary>
-/// @startMachineCycle fügt den Anfangskopf einer Machinenoperation hinzu, diese Methode wird im laufe der Entwicklung durch die untrige Methode ersetzt!!!!
+/// @startMachineCycle fügt den Anfangskopf einer Machinenoperation hinzu, diese Methode wird im laufe der Entwicklung durch die untere Methode ersetzt!!!!
 /// </summary>
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 /// @param [foundOpCycle] 
@@ -117,7 +150,7 @@ void ConvertHeidenhain::startMachineCycle(CString line, bool& foundOpCycle, CStr
 	convertedFileContent.Add(headadapter);
 	convertedFileContent.Add(postconfig);
 	convertedFileContent.Add(outputname);
-	convertedFileContent.Add(safepoint);
+	//convertedFileContent.Add(safepoint);
 	convertedFileContent.Add(mw_tool_name_list.GetAt(mw_list_counter));  //////////////////////////
 	convertedFileContent.Add(mw_tool_comment);
 	convertedFileContent.Add(mw_transform);
@@ -134,23 +167,21 @@ void ConvertHeidenhain::startMachineCycle(CString line, bool& foundOpCycle, CStr
 	}
 	moveLines.RemoveAll();
 	convertedFileContent.Add(mw_op_end);
-	convertedFileContent.Add(_T("<!=============================================================================================!>"));
-
 	mw_list_counter++;
 }
+
 /// <summary>
 /// 
 /// </summary>
 /// <param name="indexString"></param>
 void ConvertHeidenhain::startMachineCycle(CString indexString) {
-	
 	convertedFileContent.Add(mw_op_start);
 	convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
 	convertedFileContent.Add(mw_op_comment.GetAt(mw_list_counter));
 	convertedFileContent.Add(headadapter);
 	convertedFileContent.Add(postconfig);
 	convertedFileContent.Add(outputname);
-	convertedFileContent.Add(safepoint);
+	//convertedFileContent.Add(safepoint);
 	convertedFileContent.Add(mw_tool_name_list.GetAt(mw_list_counter));  //////////////////////////
 	convertedFileContent.Add(mw_tool_comment);
 	convertedFileContent.Add(mw_transform);
@@ -168,8 +199,6 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 	}
 	moveLines.RemoveAll();
 	convertedFileContent.Add(mw_op_end);
-	convertedFileContent.Add(_T("<!=============================================================================================!>"));
-
 	mw_list_counter++;
 }
 
@@ -192,6 +221,12 @@ int ConvertHeidenhain::initialComment() {
 	convertedFileContent.Add(safepoint);
 
 	for (int i = 0; i < file.GetSize(); i++) {
+		if (file.GetAt(i).Find(_T("PLANE RESET STAY")) != -1) {
+			findOtherLine(file.GetAt(i));
+		}
+		if (file.GetAt(i).Find(_T("FUNCTION MODE MILL")) != -1) {
+			findOtherLine(file.GetAt(i));
+		}
 		if (file.GetAt(i).Find(_T("M129")) != -1) {
 			findOtherLine(file.GetAt(i), ';');
 			foundRTCPOFF = true;
@@ -199,9 +234,12 @@ int ConvertHeidenhain::initialComment() {
 		else if (file.GetAt(i).Find(_T("M127")) != -1) {
 			findOtherLine(file.GetAt(i), ';');
 		}
+		else if (file.GetAt(i).Find(_T("L A+")) != -1 || file.GetAt(i).Find(_T("L  A+")) != -1 || file.GetAt(i).Find(_T("L A-")) != -1 || file.GetAt(i).Find(_T("L  A-")) != -1) {
+			fillacCoordinates(file.GetAt(i));
+		}
 		else if (file.GetAt(i).Find(_T("L X")) != -1 || file.GetAt(i).Find(_T("L Y")) != -1 || file.GetAt(i).Find(_T("L Z")) != -1 ||
 			file.GetAt(i).Find(_T("L  X")) != -1 || file.GetAt(i).Find(_T("L  Y")) != -1 || file.GetAt(i).Find(_T("L  Z")) != -1) {
-			findMovement(file.GetAt(i), i);
+			findMovement(file.GetAt(i), i, true);
 		}
 		else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
 			//findOtherLine(file.GetAt(i));
@@ -226,7 +264,6 @@ int ConvertHeidenhain::initialComment() {
 			//nothing
 		}
 		else if (file.GetAt(i).Find(_T("TOOL CALL")) != -1) {
-			findOtherLine(file.GetAt(i));
 			indexOfFirstToolCall = i;
 			break;
 		}
@@ -251,24 +288,28 @@ int ConvertHeidenhain::initialComment() {
 /// </summary>
 /// @param[line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 /// @param[index] für testzweck wird später rausgenommen
-void ConvertHeidenhain::findMovement(CString line, int index) {
+void ConvertHeidenhain::findMovement(CString line, int index, bool isMachMove) {
 	
 	CString convertedLine=_T("");
-	
-	if (line.Find(_T("FMAX")) != -1) {
-		foundFMAX = true;
-		foundFQ = false;
-		convertedLine = mw_relmove_rapid;
+	if (isMachMove == false) {
+		if (line.Find(_T("FMAX")) != -1) {
+			foundFMAX = true;
+			foundFQ = false;
+			convertedLine = mw_relmove_rapid;
+		}
+		else if (line.Find(_T("FQ1")) != -1) {
+			foundFMAX = false;
+			foundFQ = true;
+			convertedLine = mw_relmove_feed;
+		}
+		else if (foundFQ == true && foundFMAX == false) {
+			convertedLine = mw_relmove_feed;
+		}
 	}
-	else if (line.Find(_T("FQ1")) != -1) {
-		foundFMAX = false;
-		foundFQ = true;
-		convertedLine = mw_relmove_feed;
+	else
+	{
+		convertedLine = _T("MW_MACHMOVE RAPID ");
 	}
-	else if(foundFQ == true && foundFMAX == false){
-		convertedLine = mw_relmove_feed;
-	}
-
 	for (int i = 0; i < line.GetLength(); i++) {
 		//Refactor fillCoordinates
 		fillCoordinates(line, 'X', i, x_coordinate);
@@ -295,8 +336,9 @@ void ConvertHeidenhain::findMovement(CString line, int index) {
 		convertedLine.Append(feedRate);
 	}
 
-	convertedLine.Append(time_move);
+	//convertedLine.Append(time_move);
 	CString lineNr = findLineNr(line);
+	convertedLine.Append(_T(" MOVE="));
 	convertedLine.Append(lineNr);
 	line = cutAtSpace(line, 1);
 	moveLines.Add(convertedLine+_T(" #")+line);
@@ -619,7 +661,7 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 		}
 		if (foundLabel == true) {
 			if (file.GetAt(i).Find(_T("L X")) != -1 || file.GetAt(i).Find(_T("L Y")) != -1 || file.GetAt(i).Find(_T("L Z")) != -1) {
-				findMovement(file.GetAt(i), i);
+				findMovement(file.GetAt(i), i,false);
 			}
 			else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
 				findSequenceName(file.GetAt(i));
@@ -628,7 +670,8 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 				//startMachineCycle(file.GetAt(i), foundOpCycle, indexString);
 			}
 			else if (file.GetAt(i).Find(_T("FN")) != -1) {
-				findFeedRate(file.GetAt(i));
+				CString testLine = cutAtSpace(file.GetAt(i), 5);
+				findFeedRate(testLine);
 			}
 			else if (file.GetAt(i).Find(_T("CC")) != -1) {
 				findCircle(file.GetAt(i), file.GetAt(i + 1));
@@ -645,6 +688,9 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 			}
 			else if (file.GetAt(i).Find(_T("LBL 0")) != -1) {
 				findOtherLine(file.GetAt(i));
+				break;
+			}
+			else if (file.GetAt(i).Find(_T("PGM ENDE")) != -1) {
 				break;
 			}
 			else {
@@ -687,7 +733,7 @@ void ConvertHeidenhain::findCycleDef(CString lineX,CString lineY,CString lineZ) 
 	for (int i = 0; i < creoConfiContent.GetSize(); i++) {
 		if (foundTransform == true) {
 			if (creoConfiContent.GetAt(i).GetAt(3) != '0') {
-				transPos.AppendChar(creoConfiContent.GetAt(i).GetAt(0));
+				transPos.AppendChar(creoConfiContent.GetAt(i).GetAt(0)); 
 				transPos.AppendChar(creoConfiContent.GetAt(i).GetAt(1));
 				updateTrans(transPos,creoConfiContent.GetAt(i));
 				transPos = _T("");
@@ -724,13 +770,13 @@ void ConvertHeidenhain::readConfigFile() {
 	initial = cutAtSpace(configFile.GetAt(2), 1);
 	outputname = cutAtSpace(configFile.GetAt(3), 1);
 	safepoint = cutAtSpace(configFile.GetAt(4), 1);
-	headadapter = cutAtSpace(configFile.GetAt(6), 1);
-	postconfig = cutAtSpace(configFile.GetAt(7), 1);
-	shortestpath = cutAtSpace(configFile.GetAt(8), 1);
-	toolChangeTime = cutAtSpace(configFile.GetAt(9), 1);
-	toolChangePoint_x = cutAtSpace(configFile.GetAt(10), 1);
-	toolChangePoint_y = cutAtSpace(configFile.GetAt(11), 1);
-	toolChangePoint_z = cutAtSpace(configFile.GetAt(12), 1);
+	headadapter = cutAtSpace(configFile.GetAt(5), 1);
+	postconfig = cutAtSpace(configFile.GetAt(6), 1);
+	shortestpath = cutAtSpace(configFile.GetAt(7), 1);
+	toolChangeTime = cutAtSpace(configFile.GetAt(8), 1);
+	toolChangePoint_x = cutAtSpace(configFile.GetAt(9), 1);
+	toolChangePoint_z = cutAtSpace(configFile.GetAt(10), 1);
+	toolChangePoint_xy = cutAtSpace(configFile.GetAt(11), 1);
 }
 
 /// <summary>
