@@ -218,7 +218,7 @@ int ConvertHeidenhain::initialComment() {
 	convertedFileContent.Add(_T("MW_OP_START"));
 	convertedFileContent.Add(initial);
 	convertedFileContent.Add(outputname);
-	convertedFileContent.Add(safepoint);
+	convertedFileContent.Add(safepoint+_T("# INITIAL"));
 
 	for (int i = 0; i < file.GetSize(); i++) {
 		if (file.GetAt(i).Find(_T("PLANE RESET STAY")) != -1) {
@@ -239,7 +239,7 @@ int ConvertHeidenhain::initialComment() {
 		}
 		else if (file.GetAt(i).Find(_T("L X")) != -1 || file.GetAt(i).Find(_T("L Y")) != -1 || file.GetAt(i).Find(_T("L Z")) != -1 ||
 			file.GetAt(i).Find(_T("L  X")) != -1 || file.GetAt(i).Find(_T("L  Y")) != -1 || file.GetAt(i).Find(_T("L  Z")) != -1) {
-			findMovement(file.GetAt(i), i, true);
+			findMovement(file.GetAt(i), i, false);
 		}
 		else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
 			//findOtherLine(file.GetAt(i));
@@ -289,10 +289,11 @@ int ConvertHeidenhain::initialComment() {
 /// @param[line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 /// @param[index] für testzweck wird später rausgenommen
 void ConvertHeidenhain::findMovement(CString line, int index, bool isMachMove) {
-	
+	bool isM91 = false;
 	CString convertedLine=_T("");
+	
 	if (isMachMove == false) {
-		if (line.Find(_T("FMAX")) != -1) {
+		if (line.Find(_T("FMAX")) != -1 && line.Find(_T("M91")) == -1) {
 			foundFMAX = true;
 			foundFQ = false;
 			convertedLine = mw_relmove_rapid;
@@ -305,43 +306,48 @@ void ConvertHeidenhain::findMovement(CString line, int index, bool isMachMove) {
 		else if (foundFQ == true && foundFMAX == false) {
 			convertedLine = mw_relmove_feed;
 		}
+		else if((line.Find(_T("FMAX")) != -1 && line.Find(_T("M91")) != -1)) {
+			convertedLine = _T("MW_MACHMOVE RAPID  X+20.000 Y+400.000 Z+500.000 F10000");
+			isM91 = true;
+		}
 	}
-	else
-	{
-		convertedLine = _T("MW_MACHMOVE RAPID ");
-	}
-	for (int i = 0; i < line.GetLength(); i++) {
-		//Refactor fillCoordinates
-		fillCoordinates(line, 'X', i, x_coordinate);
-		fillCoordinates(line, 'Y', i, y_coordinate);
-		fillCoordinates(line, 'Z', i, z_coordinate);
-		//findFedRat(line, i, g_fedRat);
-	}
-
-	addDecimalPlace(x_coordinate);
-	addDecimalPlace(y_coordinate);
-	addDecimalPlace(z_coordinate);
-
-	convertedLine.Append(_T(" X")+x_coordinate);
-	convertedLine.Append(_T(" "));
-	convertedLine.Append(_T("Y") + y_coordinate);
-	convertedLine.Append(_T(" "));
-	convertedLine.Append(_T("Z") + z_coordinate);
-	convertedLine.Append(_T(" "));
 	
-	if (foundFMAX == true) {
-		convertedLine.Append(spindle);
-	}
-	else if (foundFQ == true) {
-		convertedLine.Append(feedRate);
-	}
+	if (isM91 == false) {
+		for (int i = 0; i < line.GetLength(); i++) {
+			//Refactor fillCoordinates
+			fillCoordinates(line, 'X', i, x_coordinate);
+			fillCoordinates(line, 'Y', i, y_coordinate);
+			fillCoordinates(line, 'Z', i, z_coordinate);
+			//findFedRat(line, i, g_fedRat);
+		}
 
-	//convertedLine.Append(time_move);
-	CString lineNr = findLineNr(line);
-	convertedLine.Append(_T(" MOVE="));
-	convertedLine.Append(lineNr);
-	line = cutAtSpace(line, 1);
-	moveLines.Add(convertedLine+_T(" #")+line);
+		addDecimalPlace(x_coordinate);
+		addDecimalPlace(y_coordinate);
+		addDecimalPlace(z_coordinate);
+
+		convertedLine.Append(_T(" X") + x_coordinate);
+		convertedLine.Append(_T(" "));
+		convertedLine.Append(_T("Y") + y_coordinate);
+		convertedLine.Append(_T(" "));
+		convertedLine.Append(_T("Z") + z_coordinate);
+		convertedLine.Append(_T(" "));
+
+		if (foundFMAX == true) {
+			convertedLine.Append(spindle);
+		}
+		else if (foundFQ == true) {
+			convertedLine.Append(feedRate);
+		}
+	}
+		//convertedLine.Append(time_move);
+		CString lineNr = findLineNr(line);
+		convertedLine.Append(_T(" MOVE="));
+		convertedLine.Append(lineNr);
+		line = cutAtSpace(line, 1);
+		if (line.Find(_T("M3")) != -1) {
+			line.Append(_T(" # MW_MACHMOVE Z+500.000"));
+		}
+		moveLines.Add(convertedLine + _T(" #") + line);
 }
 
 /// <summary>
@@ -552,10 +558,10 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	CString lineNr;
 	lineNr = findLineNr(lineCC);
 	lineCC = cutAtSpace(lineCC, 1);
-	convertedLineOne = _T("MW_RELMOVE FEED  ") + CClineX + _T(" ") + CClineY + _T(" ") +feedRate +_T(" MOVE=")+lineNr+ _T("#")+lineCC;
+	convertedLineOne = _T("MW_RELMOVE FEED  X") + CClineX + _T(" Y") + CClineY + _T(" ") +feedRate +_T(" MOVE=")+lineNr+ _T("#")+lineCC;
 	lineNr = findLineNr(lineC);
 	lineC = cutAtSpace(lineC, 1);
-	convertedLineTwo = _T("MW_RELARCMOVE FEED  ")+ ClineX + _T(" ") + ClineY + _T(" ")+rotationDirection+resultString+_T(" NI0. NJ0. NK1. ")+feedRate+ _T(" MOVE=") + lineNr+_T("#") + lineC;
+	convertedLineTwo = _T("MW_RELARCMOVE FEED  X")+ ClineX + _T(" Y") + ClineY + _T(" ")+rotationDirection+resultString+_T(" NI0. NJ0. NK1. ")+feedRate+ _T(" MOVE=") + lineNr+_T("#") + lineC;
 
 	moveLines.Add(convertedLineOne);
 	moveLines.Add(convertedLineTwo);
@@ -662,6 +668,9 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 		if (foundLabel == true) {
 			if (file.GetAt(i).Find(_T("L X")) != -1 || file.GetAt(i).Find(_T("L Y")) != -1 || file.GetAt(i).Find(_T("L Z")) != -1) {
 				findMovement(file.GetAt(i), i,false);
+			}
+			else if (file.GetAt(i).Find(_T("A+")) != -1 || file.GetAt(i).Find(_T("C+")) != -1 || file.GetAt(i).Find(_T("A-")) != -1 || file.GetAt(i).Find(_T("C-")) != -1) {
+				fillacCoordinates(file.GetAt(i));
 			}
 			else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
 				findSequenceName(file.GetAt(i));
