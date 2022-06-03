@@ -50,4 +50,8 @@ public:
 	CComboBox m_COMBO_FILE_PATH;
 	afx_msg void OnBnClickedButtonConvert();
 	afx_msg void OnBnClickedButtonSave();
+	void quickOpen();
+	void quickConvert();
+	void quickSave();
+	CProgressCtrl m_progressbar;
 };

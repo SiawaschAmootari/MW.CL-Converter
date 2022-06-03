@@ -81,6 +81,8 @@ BOOL CMWCLConverterApp::InitInstance()
 		delete pShellManager;
 	}
 
+	
+
 #if !defined(_AFXDLL) && !defined(_AFX_NO_MFC_CONTROLS_IN_DIALOGS)
 	ControlBarCleanUp();
 #endif
