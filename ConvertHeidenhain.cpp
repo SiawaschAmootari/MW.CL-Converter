@@ -61,6 +61,9 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			moveLines.Add(_T("MW_MACHMOVE RAPID  TIME.1 MOVE=91# END PGM planen MM"));
 			break;
 		}
+		/*else if (fileContent.GetAt(i).Find(_T("NP 1 -->")) != -1) {
+			findMatrix(fileContent.GetAt(i));
+		}*/
 		else if (fileContent.GetAt(i).Find(_T("M127")) != -1) {
 			findOtherLine(fileContent.GetAt(i),';');
 		}
@@ -90,7 +93,6 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			foundOpCycle = true;
 		}
 		else if (fileContent.GetAt(i).Find(_T("FN")) != -1) {
-
 			findOtherLine(fileContent.GetAt(i));
 			findFeedRate(fileContent.GetAt(i));
 		}
@@ -113,6 +115,156 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	convertedFileContent.Add(_T("MW_STOP"));
 }
 
+void ConvertHeidenhain::findMatrix(CString line) {
+
+	CString cuttedLine = cutAtSpace(line, 3);
+	
+	fillMatrix(line, a_matrix, 'A');
+	fillMatrix(line, c_matrix, 'C');
+	
+	double ra = _wtof(a_matrix);
+	double rc = _wtof(c_matrix);
+
+	calculateMatrix(ra, 0.00, rc);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ConvertHeidenhain::fillMatrix(CString line,CString& axis, char axisChar) {
+	axis = _T("");
+	
+	bool foundSpace = false;
+	bool foundAxis = true;
+	bool foundFloatingpoint = false;
+
+	for (int i = 0; i < line.GetLength(); i++) {
+		
+		if (foundAxis == true) {
+			if (line.GetAt(i) == ' ') {
+				if (foundFloatingpoint == false) {
+					axis.Append(_T(".0"));
+				}
+				break;
+			}
+			if (line.GetAt(i) == '.') {
+				foundFloatingpoint = true;
+			}
+			axis.AppendChar(line.GetAt(i));
+		}
+		
+		if (line.GetAt(i) == axisChar) {
+			foundAxis == true;
+		}
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ConvertHeidenhain::calculateMatrix(double a,double b, double c) {
+	double determinant=0;
+	
+	a = a * -1;
+	b = b * -1;
+	c = c * -1;
+
+	double degreeFactor = 0.01745329252;
+
+	double ra[3][3];
+	double rb[3][3];
+	double rc[3][3];
+
+	double fs[3][3] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+	double fr[3][3] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+
+	ra[0][0] = 1;
+	ra[0][1] = 0;
+	ra[0][2] = 0;
+
+	ra[1][0] = 0;
+	ra[1][1] = cos(a * degreeFactor);
+	ra[1][2] = sin(a * degreeFactor);
+
+	ra[2][0] = 0;
+	ra[2][1] = -sin(a * degreeFactor);
+	ra[2][2] = cos(a * degreeFactor);
+
+	////////////////////////////////////////////////////////////////////////////
+	rb[0][0] = cos(b * degreeFactor);
+	rb[0][1] = 0;
+	rb[0][2] = -sin(b * degreeFactor);
+
+	rb[1][0] = 0;
+	rb[1][1] = 1;
+	rb[1][2] = 0;
+
+	rb[2][0] = sin(b * degreeFactor);
+	rb[2][1] = 0;
+	rb[2][2] = cos(b * degreeFactor);
+
+	////////////////////////////////////////////////////////////////////////////
+	rc[0][0] = cos(c * degreeFactor);
+	rc[0][1] = sin(c * degreeFactor);
+	rc[0][2] = 0;
+
+	rc[1][0] = -sin(c * degreeFactor);
+	rc[1][1] = cos(c * degreeFactor);
+	rc[1][2] = 0;
+
+	rc[2][0] = 0;
+	rc[2][1] = 0;
+	rc[2][2] = 1;
+
+	////////////////////////////////////////////////////////////////////////////
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			double sum = 0;
+			for (int k = 0; k < 3; ++k) {
+				sum += ra[k][i] * rc[j][k];
+			}
+			fs[i][j] = sum;
+		}
+	}
+	
+	cout << "matrix A" << endl;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			printf("%.10lf |", ra[i][j]);
+		}
+		cout << endl;
+	}
+	cout << "matrix C" << endl;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			printf("%.10lf |", rc[i][j]);
+		}
+		cout << endl;
+	}
+	cout << "Result" << endl;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			printf("%.10lf |", fs[i][j]);
+		}
+		cout << endl;
+	}
+
+	cout << "inverse matrix" << endl;
+	for (int i = 0; i < 3; i++)
+		determinant = determinant + (fs[0][i] * (fs[1][(i + 1) % 3] * fs[2][(i + 2) % 3] - fs[1][(i + 2) % 3] * fs[2][(i + 1) % 3]));
+	cout << "\n\ndeterminant: " << determinant;
+	cout << "\n\nInverse of matrix is: \n";
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++)
+			printf("%.10lf |", ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
+
+		cout << "\n";
+	}
+	cout << "\n";
+
+	//HERE -> </> <-
+
+
+
+}
+
+
 void ConvertHeidenhain::fillacCoordinates(CString line) {
 	CString convertedLine = _T("MW_MACHMOVE RAPID");
 	for (int i = 0; i < line.GetLength(); i++) {
@@ -133,7 +285,6 @@ void ConvertHeidenhain::fillacCoordinates(CString line) {
 	convertedLine.Append(lineNr);
 	line = cutAtSpace(line, 1);
 	moveLines.Add(convertedLine + _T(" #") + line);
-
 }
 
 /// <summary>
@@ -358,6 +509,7 @@ void ConvertHeidenhain::findMovement(CString line, int index, bool isMachMove) {
 void ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString& g_coordinate) {
 
 	if (line.GetAt(index) == c && (line.GetAt(index + 1) == '+' || line.GetAt(index + 1) == '-')) {
+		
 		g_coordinate = _T("");
 		for (int j = index + 1; j < line.GetLength(); j++) {
 			if (line.GetAt(j) != ' ') {
@@ -693,7 +845,11 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 				findOtherLine(file.GetAt(i + 3));
 				findCycleDef(file.GetAt(i + 1), file.GetAt(i + 2), file.GetAt(i + 3));
 				outputTransform(file.GetAt(i));
-				i += 3;
+				findMatrix(file.GetAt(i + 4));
+				  ////////////////////////////////////////////////////////////////////////////////////////////////
+				 //Here                                                                                        //
+				////////////////////////////////////////////////////////////////////////////////////////////////
+				i += 4;
 			}
 			else if (file.GetAt(i).Find(_T("LBL 0")) != -1) {
 				findOtherLine(file.GetAt(i));

@@ -41,6 +41,9 @@ public:
 	void findCycleDef(CString lineX, CString lineY, CString lineZ);
 	void updateTrans(CString trans, CString line);
 	void fillacCoordinates(CString line);
+	void findMatrix(CString line);
+	void calculateMatrix(double a, double b, double c);
+	void fillMatrix(CString line, CString& axis, char axisChar);
 
 	int initialComment();
 
@@ -58,6 +61,11 @@ public:
 	CString z_coordinate=_T("+0.000");
 	CString a_coordinate = _T("+0.000");
 	CString c_coordinate = _T("+0.000");
+
+	CString a_matrix = _T("+0.000");
+	CString b_matrix = _T("+0.000");
+	CString c_matrix = _T("+0.000");
+
 
 
 	CString x_cycle = _T("+0.000");

@@ -71,10 +71,10 @@ CMWCLConverterDlg::CMWCLConverterDlg(CWnd* pParent /*=nullptr*/)
 void CMWCLConverterDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_EDIT_FILE_INPUT, m_EDIT_FILE_INPUT);
+	/*DDX_Control(pDX, IDC_EDIT_FILE_INPUT, m_EDIT_FILE_INPUT);
 	DDX_Control(pDX, IDC_EDIT_FILE_OUTPUT, m_EDIT_FILE_OUTPUT);
 	DDX_Control(pDX, IDC_LIST_MESSAGES, m_LIST_MESSAGES);
-	DDX_Control(pDX, IDC_COMBO_FILE_PATH, m_COMBO_FILE_PATH);
+	DDX_Control(pDX, IDC_COMBO_FILE_PATH, m_COMBO_FILE_PATH);*/
 	DDX_Control(pDX, m_progress, m_progressbar);
 }
 
@@ -168,6 +168,14 @@ void CMWCLConverterDlg::OnPaint()
 	{
 		CDialogEx::OnPaint();
 	}
+
+	quickConvert();
+	quickSave();
+	for (int i = 0; i < 100; i++) {
+		m_progressbar.SetPos(i);
+		Sleep(0001);
+	}
+	exit(0);
 }
 
 // Die System ruft diese Funktion auf, um den Cursor abzufragen, der angezeigt wird, während der Benutzer
@@ -254,7 +262,6 @@ void CMWCLConverterDlg::OnBnClickedButtonOpen()
 	{
 		m_LIST_MESSAGES.InsertString(0, _T("Invalid file"));
 	}
-	
 }
 
 void CMWCLConverterDlg::quickOpen()
@@ -263,11 +270,11 @@ void CMWCLConverterDlg::quickOpen()
 		//CString m_sInputfile;
 		CStdioFile file;
 		//int fileSize;
-		 g_sFilePath = _T("C:\\Users\\samootari\\OneDrive\\Desktop\\MW.CL Konverter\\planen.tap");
+		 g_sFilePath = _T("C:\\Users\\samootari\\OneDrive\\Desktop\\MW.CL Konverter\\op010.tap");
 			if (std::ifstream(g_sFilePath).good())
 			{
 				CString sNewName = g_sFilePath + "_backup";
-				m_COMBO_FILE_PATH.InsertString(0, g_sFilePath);
+				//m_COMBO_FILE_PATH.InsertString(0, g_sFilePath);
 				//rename(m_sInputfile, newName);
 				CStdioFile file;
 				file.Open(g_sFilePath, CStdioFile::modeRead);
@@ -301,7 +308,7 @@ void CMWCLConverterDlg::quickOpen()
 
 				}
 				theApp.ArrToVal(firstHundredLines, sFilecontent);
-				m_EDIT_FILE_INPUT.SetWindowText(sFilecontent);
+				//m_EDIT_FILE_INPUT.SetWindowText(sFilecontent);
 
 				file.Close();
 				//findToolCycle();
@@ -332,7 +339,7 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 
 	}
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
-	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
+	//m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
 
 	//for (int i = 0; i < convert.mw_op_number_list.GetSize(); i++) {
 	//	firstHundredLines.Add(convert.mw_op_number_list.GetAt(i));
@@ -342,7 +349,7 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	//}
 	//firstHundredLines.Add(convert.mw_tool_name);
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
-	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent); 
+	//m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent); 
 
 	m_sFileConverted.Copy(firstHundredLines);
 	m_progressbar.SetPos(100);
@@ -360,7 +367,7 @@ void CMWCLConverterDlg::quickConvert()
 
 	}
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
-	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
+	//m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
 
 	//for (int i = 0; i < convert.mw_op_number_list.GetSize(); i++) {
 	//	firstHundredLines.Add(convert.mw_op_number_list.GetAt(i));
@@ -370,7 +377,7 @@ void CMWCLConverterDlg::quickConvert()
 	//}
 	//firstHundredLines.Add(convert.mw_tool_name);
 	theApp.ArrToVal(firstHundredLines, sFilecontent);
-	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
+	//m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent);
 
 	m_sFileConverted.Copy(firstHundredLines);
 }
