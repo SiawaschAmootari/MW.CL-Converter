@@ -65,7 +65,14 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			findMatrix(fileContent.GetAt(i));
 		}*/
 		else if (fileContent.GetAt(i).Find(_T("M127")) != -1) {
-			findOtherLine(fileContent.GetAt(i),';');
+			findOtherLine(fileContent.GetAt(i), ';');
+		}
+		else if (fileContent.GetAt(i).Find(_T("FN")) != -1) {
+			findOtherLine(fileContent.GetAt(i));
+			findFeedRate(fileContent.GetAt(i));
+		}
+		else if (fileContent.GetAt(i).Find(_T(";")) != -1) {
+			//ignore line
 		}
 		else if (fileContent.GetAt(i).Find(_T("L X")) != -1 || fileContent.GetAt(i).Find(_T("L Y")) != -1 || fileContent.GetAt(i).Find(_T("L Z")) != -1||
 			fileContent.GetAt(i).Find(_T("L  X")) != -1 || fileContent.GetAt(i).Find(_T("L  Y")) != -1 || fileContent.GetAt(i).Find(_T("L  Z")) != -1) {
@@ -81,20 +88,17 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			//comment ignore line
 		}
 		else if (fileContent.GetAt(i).Find(_T("TOOL CALL")) != -1) {
-			findOtherLine(fileContent.GetAt(i));
+			
 			findToolCall(fileContent.GetAt(i));
+			findOtherLine(fileContent.GetAt(i));
 			op_number_index++;
 			indexString.Format(_T("%d"), op_number_index);
 			mw_op_number_list.Add(mw_op_number + _T(" ") + indexString);
 			indexString = _T("");
 			if (foundOpCycle == true) {
-				startMachineCycle(fileContent.GetAt(i), foundOpCycle, indexString);
+				startMachineCycle(fileContent.GetAt(i));
 			}
 			foundOpCycle = true;
-		}
-		else if (fileContent.GetAt(i).Find(_T("FN")) != -1) {
-			findOtherLine(fileContent.GetAt(i));
-			findFeedRate(fileContent.GetAt(i));
 		}
 		else if (fileContent.GetAt(i).Find(_T("CC")) != -1) {
 			findCircle(fileContent.GetAt(i), fileContent.GetAt(i+1));
@@ -102,9 +106,6 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		}
 		else if (fileContent.GetAt(i).Find(_T("CALL LBL")) != -1) {
 			jumpToLabel(fileContent.GetAt(i));
-		}
-		else if (fileContent.GetAt(i).Find(_T(";")) != -1) {
-			//ignore line
 		}
 		else{
 			findOtherLine(fileContent.GetAt(i));
@@ -119,13 +120,18 @@ void ConvertHeidenhain::findMatrix(CString line) {
 
 	CString cuttedLine = cutAtSpace(line, 3);
 	
-	fillMatrix(line, a_matrix, 'A');
-	fillMatrix(line, c_matrix, 'C');
+	fillMatrix(cuttedLine, a_matrix, 'A');
+	fillMatrix(cuttedLine, c_matrix, 'C');
 	
 	double ra = _wtof(a_matrix);
 	double rc = _wtof(c_matrix);
 
-	calculateMatrix(ra, 0.00, rc);
+	if (ra == 0 && rc == 0) {
+		findOtherLine(line);
+	}
+	else {
+		calculateMatrix(ra, 0.00, rc);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -133,7 +139,7 @@ void ConvertHeidenhain::fillMatrix(CString line,CString& axis, char axisChar) {
 	axis = _T("");
 	
 	bool foundSpace = false;
-	bool foundAxis = true;
+	bool foundAxis = false;
 	bool foundFloatingpoint = false;
 
 	for (int i = 0; i < line.GetLength(); i++) {
@@ -152,7 +158,7 @@ void ConvertHeidenhain::fillMatrix(CString line,CString& axis, char axisChar) {
 		}
 		
 		if (line.GetAt(i) == axisChar) {
-			foundAxis == true;
+			foundAxis = true;
 		}
 	}
 }
@@ -250,17 +256,38 @@ void ConvertHeidenhain::calculateMatrix(double a,double b, double c) {
 		determinant = determinant + (fs[0][i] * (fs[1][(i + 1) % 3] * fs[2][(i + 2) % 3] - fs[1][(i + 2) % 3] * fs[2][(i + 1) % 3]));
 	cout << "\n\ndeterminant: " << determinant;
 	cout << "\n\nInverse of matrix is: \n";
+	double test[9];
+	int testCounter = 0;
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++)
-			printf("%.10lf |", ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
-
+			//printf("%.10lf |", ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
+			test[testCounter] = ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant;
+			testCounter++;
 		cout << "\n";
 	}
 	cout << "\n";
-
+	for (int i = 0; i < 9; i++) {
+		CString str;
+		str.Format(_T("%lf"),test[i]);
+		cout << str;
+	}
 	//HERE -> </> <-
 
+	CStringArray matrixInString;
+	int counter = 0;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			CString str;
+			str.Format(_T("%lf"), ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
+			matrixInString.Add(str);
+		}
+	}
 
+	CString convertedLine = _T("MW_TOOLPATH_TRANSFORM (") + matrixInString.GetAt(0) + _T(",") + matrixInString.GetAt(1) + _T(",") + matrixInString.GetAt(2) + _T(",") + matrixInString.GetAt(3) + _T(",") + 
+		matrixInString.GetAt(4) + _T(",") + matrixInString.GetAt(5) + _T(",") + matrixInString.GetAt(6) + _T(",") + matrixInString.GetAt(7) + _T(",") + matrixInString.GetAt(8) + _T(")");
+
+
+	moveLines.Add(convertedLine);
 
 }
 
@@ -293,7 +320,7 @@ void ConvertHeidenhain::fillacCoordinates(CString line) {
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 /// @param [foundOpCycle] 
 /// @param [indexString] 
-void ConvertHeidenhain::startMachineCycle(CString line, bool& foundOpCycle, CString indexString) {
+/*void ConvertHeidenhain::startMachineCycle(CString line, bool& foundOpCycle, CString indexString) {
 
 	convertedFileContent.Add(mw_op_start);
 	convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
@@ -319,7 +346,7 @@ void ConvertHeidenhain::startMachineCycle(CString line, bool& foundOpCycle, CStr
 	moveLines.RemoveAll();
 	convertedFileContent.Add(mw_op_end);
 	mw_list_counter++;
-}
+}*/
 
 /// <summary>
 /// 
@@ -429,6 +456,7 @@ int ConvertHeidenhain::initialComment() {
 	for (int i = 0; i < moveLines.GetSize(); i++) {
 		convertedFileContent.Add(moveLines.GetAt(i));
 	}
+	convertedFileContent.Add(_T("MW_RTCP OFF"));
 	convertedFileContent.Add(mw_op_end);
 	moveLines.RemoveAll();
 	return indexOfFirstToolCall;
