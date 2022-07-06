@@ -270,6 +270,7 @@ void ConvertHeidenhain::calculateMatrix(double a,double b, double c) {
 		CString str;
 		str.Format(_T("%lf"),test[i]);
 		cout << str;
+
 	}
 	//HERE -> </> <-
 
@@ -549,6 +550,18 @@ void ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString
 		}
 		g_coordinate.Replace(',', '.');
 	}
+}
+
+CString ConvertHeidenhain::addTwoStrings(CString numberOne, CString numberTwo) {
+
+
+	double numberOneAsDouble = _wtof(numberOne);
+	double numberTwoAsDouble = _wtof(numberTwo);
+	double result = numberOneAsDouble + numberTwoAsDouble;
+	CString resultAsString;
+	resultAsString.Format(_T("%lf"), result);
+	
+	return resultAsString;
 }
 
 /// <summary>

@@ -44,7 +44,7 @@ public:
 	void findMatrix(CString line);
 	void calculateMatrix(double a, double b, double c);
 	void fillMatrix(CString line, CString& axis, char axisChar);
-
+	CString addTwoStrings(CString numberOne, CString numberTwo);
 	int initialComment();
 
 	CString cutAtSpace(CString line,int spaces);
