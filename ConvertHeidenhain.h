@@ -8,8 +8,8 @@ using namespace std;
 class ConvertHeidenhain : public CMWCLConverterDlg
 {
 public:
-	
-	ConvertHeidenhain(); 
+
+	ConvertHeidenhain();
 	CStringArray fileContent;
 	CStringArray convertedFileContent;
 	CStringArray tool_repositoryContent;
@@ -21,8 +21,8 @@ public:
 
 	//Methods
 	void readConfigFile();
-	void startConverting(CStringArray &fileContent,int& labelIndex ,CString filePath);
-	void findMovement(CString line,int index,bool isMachMove);
+	void startConverting(CStringArray& fileContent, int& labelIndex, CString filePath);
+	void findMovement(CString line, int index, bool isMachMove);
 	void fillCoordinates(CString line, char c, int index, CString& g_coordinate);
 	void addDecimalPlace(CString& line);
 	void findToolCall(CString line);
@@ -36,34 +36,42 @@ public:
 	void findOtherLine(CString line);
 	void findOtherLine(CString line, char c);
 	void jumpToLabel(CString line);
-	void textFilter(CString line, int &index);
+	void textFilter(CString line, int& index);
 	void outputTransform(CString line);
 	void findCycleDef(CString lineX, CString lineY, CString lineZ);
 	void updateTrans(CString trans, CString line);
 	void fillacCoordinates(CString line);
-
+	void findMatrix(CString line);
+	void calculateMatrix(double a, double b, double c);
+	void fillMatrix(CString line, CString& axis, char axisChar);
+	CString addTwoStrings(CString numberOne, CString numberTwo);
 	int initialComment();
 
-	CString cutAtSpace(CString line,int spaces);
-	CString cutAtSpace(CString line, int spaces,char c);
+	CString cutAtSpace(CString line, int spaces);
+	CString cutAtSpace(CString line, int spaces, char c);
 	CString findSubFilesPath(CString fileName);
 	CString fillPosition(CString line);
 
-	
+
 	//filterStrings
-	CString feedRate =_T("F");
+	CString feedRate = _T("F");
 	CString spindle = _T("F");
-	CString x_coordinate=_T("+0.000");
-	CString y_coordinate=_T("+0.000");
-	CString z_coordinate=_T("+0.000");
+	CString x_coordinate = _T("+0.000");
+	CString y_coordinate = _T("+0.000");
+	CString z_coordinate = _T("+0.000");
 	CString a_coordinate = _T("+0.000");
 	CString c_coordinate = _T("+0.000");
+
+	CString a_matrix = _T("+0.000");
+	CString b_matrix = _T("+0.000");
+	CString c_matrix = _T("+0.000");
+
 
 
 	CString x_cycle = _T("+0.000");
 	CString y_cycle = _T("+0.000");
 	CString z_cycle = _T("+0.000");
-	
+
 	//Variablen für die Transformation
 	//------------------------------------------
 	CString xx = _T("0");
@@ -95,17 +103,17 @@ public:
 	CString toolChangePoint_x = _T("");
 	CString toolChangePoint_z = _T("");
 	CString toolChangePoint_xy = _T("");
-
+	CString mw_toolCall = _T("");
 	//-----------------------------------------
 
 	CString findLineNr(CString line);
 	CString path;
-	
+
 	//bools for algortihm
 	bool foundFMAX = false;
 	bool foundFQ = false;
 	bool foundRTCPOFF = false;
-	
+
 	//Hardcoded Strings
 	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID   MOVE=");
 	CString mw_other_line = _T("MW_MACHMOVE RAPID  TIME.1 MOVE=");
@@ -124,7 +132,7 @@ public:
 	CString mw_op_end = _T("MW_OP_END");
 	CString mw_op_number = _T("MW_OP_NUMBER");
 	CString mw_transform = _T("");
-	
+
 
 	int op_number_index = 0;
 	int mw_list_counter = 0;
