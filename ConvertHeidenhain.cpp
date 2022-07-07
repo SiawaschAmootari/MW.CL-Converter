@@ -279,13 +279,13 @@ void ConvertHeidenhain::calculateMatrix(double a,double b, double c) {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
 			CString str;
-			str.Format(_T("%lf"), ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
+			str.Format(_T("%.10lf"), ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
 			matrixInString.Add(str);
 		}
 	}
 
-	CString convertedLine = _T("MW_TOOLPATH_TRANSFORM (") + matrixInString.GetAt(0) + _T(",") + matrixInString.GetAt(1) + _T(",") + matrixInString.GetAt(2) + _T(",") + matrixInString.GetAt(3) + _T(",") + 
-		matrixInString.GetAt(4) + _T(",") + matrixInString.GetAt(5) + _T(",") + matrixInString.GetAt(6) + _T(",") + matrixInString.GetAt(7) + _T(",") + matrixInString.GetAt(8) + _T(")");
+	CString convertedLine = _T("MW_TOOLPATH_TRANSFORM (") + matrixInString.GetAt(0) + _T(",") + matrixInString.GetAt(1) + _T(",") + matrixInString.GetAt(2)+ _T(",") +addTwoStrings(tx,x_cycle)+ _T(",") + matrixInString.GetAt(3) + _T(",") +
+		matrixInString.GetAt(4) + _T(",") + matrixInString.GetAt(5) + _T(",") + addTwoStrings(ty, y_cycle) +_T(",") + matrixInString.GetAt(6) + _T(",") + matrixInString.GetAt(7) + _T(",") + matrixInString.GetAt(8)+ _T(",") +addTwoStrings(tz, z_cycle) + _T(".,0,0,0,1") +_T(")");
 
 
 	moveLines.Add(convertedLine);
@@ -465,7 +465,7 @@ int ConvertHeidenhain::initialComment() {
 	moveLines.RemoveAll();
 	return indexOfFirstToolCall;
 }
-
+// 
 /// <summary>
 /// @findMovement filtert die Zeile nach den Veränderungen der X,Y und Z koordinaten aus und speichert diese in den membervariablen der Klasse ConvertHeidenhain.cpp
 /// </summary>
@@ -924,6 +924,23 @@ void ConvertHeidenhain::outputTransform(CString line) {
 	//convertedFileContent.Add(mw_toolpath_transform);
 }
 
+CString ConvertHeidenhain::cutCoordinateChar(CString coordinate) {
+	CString coordinateNumber = _T("");
+	int counter;
+	if (coordinate.GetAt(1) == ' ') {
+		counter = 3;
+	}
+	else if (coordinate.GetAt(1) == '+'&& coordinate.GetAt(0) != ' ') {
+		counter = 2;
+	}
+	else { counter = 1; }
+	
+	for (int i = counter; i < coordinate.GetLength(); i++) {
+		coordinateNumber.AppendChar(coordinate.GetAt(i));
+	}
+
+	return coordinateNumber;
+}
 /// <summary>
 /// 
 /// </summary>
@@ -934,9 +951,9 @@ void ConvertHeidenhain::findCycleDef(CString lineX,CString lineY,CString lineZ) 
 	CString coordinateZ = cutAtSpace(lineZ, 4);
 	CString transPos = _T("");
 	
-	x_cycle = coordinateX;
-	y_cycle = coordinateY;
-	z_cycle = coordinateZ;
+	x_cycle = cutCoordinateChar(coordinateX);
+	y_cycle = cutCoordinateChar(coordinateY);
+	z_cycle = cutCoordinateChar(coordinateZ);
 	
 	bool foundTransform = false;
 	for (int i = 0; i < creoConfiContent.GetSize(); i++) {
@@ -952,6 +969,8 @@ void ConvertHeidenhain::findCycleDef(CString lineX,CString lineY,CString lineZ) 
 			foundTransform = true;
 		}	
 	}
+	
+
 }
 
 /// <summary>

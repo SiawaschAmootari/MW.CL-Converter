@@ -259,6 +259,7 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	convert.startConverting(m_sFilecontent, labelIndex,g_sFilePath);
 	CString sFilecontent;
 	CStringArray firstHundredLines;
+
 	for (int i = 0; i < convert.convertedFileContent.GetSize(); i++) {
 		firstHundredLines.Add(convert.convertedFileContent.GetAt(i));
 
@@ -277,6 +278,11 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 	m_EDIT_FILE_OUTPUT.SetWindowText(sFilecontent); 
 
 	m_sFileConverted.Copy(firstHundredLines);
+
+	CString x = convert.x_cycle;
+	m_LIST_MESSAGES.InsertString(0, convert.x_cycle);
+	m_LIST_MESSAGES.InsertString(0, convert.y_cycle);
+	m_LIST_MESSAGES.InsertString(0, convert.z_cycle);
 }
 
 

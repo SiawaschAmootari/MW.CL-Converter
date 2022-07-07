@@ -19,7 +19,7 @@ public:
 	CStringArray configFile;
 	int label_index;
 
-	//Methods
+	//Methods without return value
 	void readConfigFile();
 	void startConverting(CStringArray& fileContent, int& labelIndex, CString filePath);
 	void findMovement(CString line, int index, bool isMachMove);
@@ -44,18 +44,22 @@ public:
 	void findMatrix(CString line);
 	void calculateMatrix(double a, double b, double c);
 	void fillMatrix(CString line, CString& axis, char axisChar);
-	CString addTwoStrings(CString numberOne, CString numberTwo);
+
+	//Methods with int return value
 	int initialComment();
 
+	//Methods with CString return value
 	CString cutAtSpace(CString line, int spaces);
 	CString cutAtSpace(CString line, int spaces, char c);
 	CString findSubFilesPath(CString fileName);
 	CString fillPosition(CString line);
-
+	CString cutCoordinateChar(CString coordinate);
+	CString addTwoStrings(CString numberOne, CString numberTwo);
 
 	//filterStrings
 	CString feedRate = _T("F");
 	CString spindle = _T("F");
+
 	CString x_coordinate = _T("+0.000");
 	CString y_coordinate = _T("+0.000");
 	CString z_coordinate = _T("+0.000");
@@ -65,8 +69,6 @@ public:
 	CString a_matrix = _T("+0.000");
 	CString b_matrix = _T("+0.000");
 	CString c_matrix = _T("+0.000");
-
-
 
 	CString x_cycle = _T("+0.000");
 	CString y_cycle = _T("+0.000");
