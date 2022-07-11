@@ -43,7 +43,6 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	openSubFiles(creoConfiPath,creoConfiContent);
 	file.Copy(fileContent);
 	bool foundOpCycle = false;
-
 	int indexOfFirstToolCall = initialComment();
 	
 	for (int i = indexOfFirstToolCall; i < fileContent.GetSize(); i++) {
@@ -61,9 +60,6 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			moveLines.Add(_T("MW_MACHMOVE RAPID  TIME.1 MOVE=91# END PGM planen MM"));
 			break;
 		}
-		/*else if (fileContent.GetAt(i).Find(_T("NP 1 -->")) != -1) {
-			findMatrix(fileContent.GetAt(i));
-		}*/
 		else if (fileContent.GetAt(i).Find(_T("M127")) != -1) {
 			findOtherLine(fileContent.GetAt(i), ';');
 		}
@@ -82,13 +78,23 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			fillacCoordinates(fileContent.GetAt(i));
 		}
 		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength()-1) =='-') {
-			findSequenceName(fileContent.GetAt(i));
+			
+			if (searchForToolChange(i) == false) {
+				CString testString = fileContent.GetAt(i);
+				op_number_index++;
+				indexString.Format(_T("%d"), op_number_index);
+				mw_op_number_list.Add(mw_op_number + _T(" ") + indexString);
+				indexString = _T("");
+				findSequenceName(fileContent.GetAt(i));
+				sequenceWithoutToolChange(fileContent.GetAt(i));
+				startMachineCycle(_T("try catch"));
+			}
 		}
 		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength() - 1) != '-') {
 			//comment ignore line
 		}
 		else if (fileContent.GetAt(i).Find(_T("TOOL CALL")) != -1) {
-			
+			CString testString = fileContent.GetAt(i);
 			findToolCall(fileContent.GetAt(i));
 			findOtherLine(fileContent.GetAt(i));
 			op_number_index++;
@@ -96,7 +102,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			mw_op_number_list.Add(mw_op_number + _T(" ") + indexString);
 			indexString = _T("");
 			if (foundOpCycle == true) {
-				startMachineCycle(fileContent.GetAt(i));
+				startMachineCycle(_T("hello"));
 			}
 			foundOpCycle = true;
 		}
@@ -115,6 +121,32 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	startMachineCycle(indexString);
 	convertedFileContent.Add(_T("MW_STOP"));
 }
+
+void ConvertHeidenhain::sequenceWithoutToolChange(CString line) {
+	sequenceNamewotc = _T("MW_OP_COMMENT ");
+	CString cuttedLine = cutAtSpace(line, 3, ' ');
+	CString sequenceName = _T("\"");
+	sequenceName.Append(cuttedLine);
+	sequenceName.AppendChar(_T('"'));
+
+	sequenceNamewotc.Append(sequenceName);
+}
+
+bool ConvertHeidenhain::searchForToolChange(int index) {
+	bool foundToolCall=false;
+	for (int i = index; i < file.GetSize(); i++) {
+		if (file.GetAt(i).Find(_T("TOOL CALL")) != -1) {
+			foundToolCall = true;
+			break;
+		}
+		else if (file.GetAt(i).Find(_T("CALL LBL")) != -1) {
+			break;
+		}
+	}
+
+	return foundToolCall;
+}
+
 
 void ConvertHeidenhain::findMatrix(CString line) {
 
@@ -283,7 +315,6 @@ void ConvertHeidenhain::calculateMatrix(double a,double b, double c) {
 			matrixInString.Add(str);
 		}
 	}
-
 	CString convertedLine = _T("MW_TOOLPATH_TRANSFORM (") + matrixInString.GetAt(0) + _T(",") + matrixInString.GetAt(1) + _T(",") + matrixInString.GetAt(2)+ _T(",") +addTwoStrings(tx,x_cycle)+ _T(",") + matrixInString.GetAt(3) + _T(",") +
 		matrixInString.GetAt(4) + _T(",") + matrixInString.GetAt(5) + _T(",") + addTwoStrings(ty, y_cycle) +_T(",") + matrixInString.GetAt(6) + _T(",") + matrixInString.GetAt(7) + _T(",") + matrixInString.GetAt(8)+ _T(",") +addTwoStrings(tz, z_cycle) + _T(".,0,0,0,1") +_T(")");
 
@@ -354,19 +385,37 @@ void ConvertHeidenhain::fillacCoordinates(CString line) {
 /// </summary>
 /// <param name="indexString"></param>
 void ConvertHeidenhain::startMachineCycle(CString indexString) {
-	convertedFileContent.Add(mw_op_start);
-	convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
-	convertedFileContent.Add(mw_op_comment.GetAt(mw_list_counter));
-	convertedFileContent.Add(headadapter);
-	convertedFileContent.Add(postconfig);
-	convertedFileContent.Add(outputname);
-	//convertedFileContent.Add(safepoint);
-	convertedFileContent.Add(mw_tool_name_list.GetAt(mw_list_counter));  //////////////////////////
-	convertedFileContent.Add(mw_tool_comment);
-	convertedFileContent.Add(mw_transform);
-	convertedFileContent.Add(mw_toolpath_transform);
-	convertedFileContent.Add(shortestpath);
+	
+	if (indexString.Find(_T("try catch")) == -1) {
+		convertedFileContent.Add(mw_op_start);
+		convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
+		convertedFileContent.Add(mw_op_comment.GetAt(0));
+		convertedFileContent.Add(headadapter);
+		convertedFileContent.Add(postconfig);
+		convertedFileContent.Add(outputname);
+		//convertedFileContent.Add(safepoint);
+		convertedFileContent.Add(mw_tool_name_list.GetAt(0));
+		convertedFileContent.Add(mw_tool_comment);
+		convertedFileContent.Add(mw_transform);
+		convertedFileContent.Add(mw_toolpath_transform);
+		convertedFileContent.Add(shortestpath);
+		
+	}
+	else {
+		convertedFileContent.Add(mw_op_start);
+		convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
+		convertedFileContent.Add(mw_op_comment.GetAt(mw_list_counter));
+		convertedFileContent.Add(headadapter);
+		convertedFileContent.Add(postconfig);
+		convertedFileContent.Add(outputname);
+		//convertedFileContent.Add(safepoint);
+		convertedFileContent.Add(mw_tool_name_list.GetAt(0));
+		convertedFileContent.Add(mw_tool_comment);
+		convertedFileContent.Add(mw_transform);
+		convertedFileContent.Add(mw_toolpath_transform);
+		convertedFileContent.Add(shortestpath);
 
+	}
 	if (foundRTCPOFF == true) {
 		convertedFileContent.Add(_T("MW_RTCP OFF"));
 	}
@@ -465,7 +514,8 @@ int ConvertHeidenhain::initialComment() {
 	moveLines.RemoveAll();
 	return indexOfFirstToolCall;
 }
-// 
+
+
 /// <summary>
 /// @findMovement filtert die Zeile nach den Veränderungen der X,Y und Z koordinaten aus und speichert diese in den membervariablen der Klasse ConvertHeidenhain.cpp
 /// </summary>
@@ -556,8 +606,7 @@ void ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString
 }
 
 CString ConvertHeidenhain::addTwoStrings(CString numberOne, CString numberTwo) {
-
-
+	
 	double numberOneAsDouble = _wtof(numberOne);
 	double numberTwoAsDouble = _wtof(numberTwo);
 	double result = numberOneAsDouble + numberTwoAsDouble;
@@ -817,6 +866,7 @@ CString ConvertHeidenhain::cutAtSpace(CString line,int spaces) {
 	return labelName;
 }
 
+
 /// <summary>
 /// Schneidet den Eingegebenen String ab und returned das Ergebnis zurück.
 /// </summary>
@@ -828,7 +878,7 @@ CString ConvertHeidenhain::cutAtSpace(CString line, int spaces, char c) {
 	int spaceCount = 0;
 	CString labelName = _T("");
 	for (int i = 0; i < line.GetLength(); i++) {
-		if (line.GetAt(i) == c) {
+		if (line.GetAt(i) == c && spaceCount == i) {
 			break;
 		}
 		if (line.GetAt(i) == ' ') {
@@ -941,6 +991,7 @@ CString ConvertHeidenhain::cutCoordinateChar(CString coordinate) {
 
 	return coordinateNumber;
 }
+
 /// <summary>
 /// 
 /// </summary>
