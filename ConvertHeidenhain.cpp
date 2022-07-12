@@ -79,14 +79,14 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		}
 		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength()-1) =='-') {
 			
+			sequenceWithoutToolChange(fileContent.GetAt(i));
 			if (searchForToolChange(i) == false) {
 				CString testString = fileContent.GetAt(i);
 				op_number_index++;
 				indexString.Format(_T("%d"), op_number_index);
 				mw_op_number_list.Add(mw_op_number + _T(" ") + indexString);
 				indexString = _T("");
-				findSequenceName(fileContent.GetAt(i));
-				sequenceWithoutToolChange(fileContent.GetAt(i));
+				//findSequenceName(fileContent.GetAt(i));
 				startMachineCycle(_T("try catch"));
 			}
 		}
@@ -122,14 +122,68 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	convertedFileContent.Add(_T("MW_STOP"));
 }
 
+/// <summary>
+/// 
+/// </summary>
+/// <param name="indexString"></param>
+void ConvertHeidenhain::startMachineCycle(CString indexString) {
+
+	if (indexString.Find(_T("try catch")) == -1) {
+		convertedFileContent.Add(mw_op_start);
+		convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
+		convertedFileContent.Add(mw_op_comment.GetAt(sequenceCounter));
+		convertedFileContent.Add(headadapter);
+		convertedFileContent.Add(postconfig);
+		convertedFileContent.Add(outputname);
+		//convertedFileContent.Add(safepoint);
+		convertedFileContent.Add(mw_tool_name_list.GetAt(0));
+		convertedFileContent.Add(mw_tool_comment);
+		convertedFileContent.Add(mw_transform);
+		convertedFileContent.Add(mw_toolpath_transform);
+		convertedFileContent.Add(shortestpath);
+		sequenceCounter++;
+	}
+	else {
+		convertedFileContent.Add(mw_op_start);
+		convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
+		convertedFileContent.Add(mw_op_comment.GetAt(sequenceCounter));
+		convertedFileContent.Add(headadapter);
+		convertedFileContent.Add(postconfig);
+		convertedFileContent.Add(outputname);
+		//convertedFileContent.Add(safepoint);
+		convertedFileContent.Add(mw_tool_name_list.GetAt(0));
+		convertedFileContent.Add(mw_tool_comment);
+		convertedFileContent.Add(mw_transform);
+		convertedFileContent.Add(mw_toolpath_transform);
+		convertedFileContent.Add(shortestpath);
+		sequenceCounter++;
+	}
+	if (foundRTCPOFF == true) {
+		convertedFileContent.Add(_T("MW_RTCP OFF"));
+	}
+	convertedFileContent.Add(toolChangeTime);
+	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
+	if (mw_toolCall.GetLength() > 1) {
+		convertedFileContent.Add(mw_toolCall);
+	}
+	for (int i = 0; i < moveLines.GetSize() - 1; i++) {
+		convertedFileContent.Add(moveLines.GetAt(i));
+	}
+	mw_toolCall = moveLines.GetAt(moveLines.GetSize() - 1);
+	moveLines.RemoveAll();
+	convertedFileContent.Add(mw_op_end);
+	mw_list_counter++;
+}
+
 void ConvertHeidenhain::sequenceWithoutToolChange(CString line) {
 	sequenceNamewotc = _T("MW_OP_COMMENT ");
-	CString cuttedLine = cutAtSpace(line, 3, ' ');
+	CString cuttedLine = cutAtSpace(line, 3, '-');
 	CString sequenceName = _T("\"");
 	sequenceName.Append(cuttedLine);
 	sequenceName.AppendChar(_T('"'));
 
 	sequenceNamewotc.Append(sequenceName);
+	mw_op_comment.Add(sequenceNamewotc);
 }
 
 bool ConvertHeidenhain::searchForToolChange(int index) {
@@ -146,183 +200,6 @@ bool ConvertHeidenhain::searchForToolChange(int index) {
 
 	return foundToolCall;
 }
-
-
-void ConvertHeidenhain::findMatrix(CString line) {
-
-	CString cuttedLine = cutAtSpace(line, 3);
-	
-	fillMatrix(cuttedLine, a_matrix, 'A');
-	fillMatrix(cuttedLine, c_matrix, 'C');
-	
-	double ra = _wtof(a_matrix);
-	double rc = _wtof(c_matrix);
-
-	if (ra == 0 && rc == 0) {
-		findOtherLine(line);
-	}
-	else {
-		calculateMatrix(ra, 0.00, rc);
-	}
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ConvertHeidenhain::fillMatrix(CString line,CString& axis, char axisChar) {
-	axis = _T("");
-	
-	bool foundSpace = false;
-	bool foundAxis = false;
-	bool foundFloatingpoint = false;
-
-	for (int i = 0; i < line.GetLength(); i++) {
-		
-		if (foundAxis == true) {
-			if (line.GetAt(i) == ' ') {
-				if (foundFloatingpoint == false) {
-					axis.Append(_T(".0"));
-				}
-				break;
-			}
-			if (line.GetAt(i) == '.') {
-				foundFloatingpoint = true;
-			}
-			axis.AppendChar(line.GetAt(i));
-		}
-		
-		if (line.GetAt(i) == axisChar) {
-			foundAxis = true;
-		}
-	}
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ConvertHeidenhain::calculateMatrix(double a,double b, double c) {
-	double determinant=0;
-	
-	a = a * -1;
-	b = b * -1;
-	c = c * -1;
-
-	double degreeFactor = 0.01745329252;
-
-	double ra[3][3];
-	double rb[3][3];
-	double rc[3][3];
-
-	double fs[3][3] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
-	double fr[3][3] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
-
-	ra[0][0] = 1;
-	ra[0][1] = 0;
-	ra[0][2] = 0;
-
-	ra[1][0] = 0;
-	ra[1][1] = cos(a * degreeFactor);
-	ra[1][2] = sin(a * degreeFactor);
-
-	ra[2][0] = 0;
-	ra[2][1] = -sin(a * degreeFactor);
-	ra[2][2] = cos(a * degreeFactor);
-
-	////////////////////////////////////////////////////////////////////////////
-	rb[0][0] = cos(b * degreeFactor);
-	rb[0][1] = 0;
-	rb[0][2] = -sin(b * degreeFactor);
-
-	rb[1][0] = 0;
-	rb[1][1] = 1;
-	rb[1][2] = 0;
-
-	rb[2][0] = sin(b * degreeFactor);
-	rb[2][1] = 0;
-	rb[2][2] = cos(b * degreeFactor);
-
-	////////////////////////////////////////////////////////////////////////////
-	rc[0][0] = cos(c * degreeFactor);
-	rc[0][1] = sin(c * degreeFactor);
-	rc[0][2] = 0;
-
-	rc[1][0] = -sin(c * degreeFactor);
-	rc[1][1] = cos(c * degreeFactor);
-	rc[1][2] = 0;
-
-	rc[2][0] = 0;
-	rc[2][1] = 0;
-	rc[2][2] = 1;
-
-	////////////////////////////////////////////////////////////////////////////
-	for (int i = 0; i < 3; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			double sum = 0;
-			for (int k = 0; k < 3; ++k) {
-				sum += ra[k][i] * rc[j][k];
-			}
-			fs[i][j] = sum;
-		}
-	}
-	
-	cout << "matrix A" << endl;
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			printf("%.10lf |", ra[i][j]);
-		}
-		cout << endl;
-	}
-	cout << "matrix C" << endl;
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			printf("%.10lf |", rc[i][j]);
-		}
-		cout << endl;
-	}
-	cout << "Result" << endl;
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			printf("%.10lf |", fs[i][j]);
-		}
-		cout << endl;
-	}
-
-	cout << "inverse matrix" << endl;
-	for (int i = 0; i < 3; i++)
-		determinant = determinant + (fs[0][i] * (fs[1][(i + 1) % 3] * fs[2][(i + 2) % 3] - fs[1][(i + 2) % 3] * fs[2][(i + 1) % 3]));
-	cout << "\n\ndeterminant: " << determinant;
-	cout << "\n\nInverse of matrix is: \n";
-	double test[9];
-	int testCounter = 0;
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++)
-			//printf("%.10lf |", ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
-			test[testCounter] = ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant;
-			testCounter++;
-		cout << "\n";
-	}
-	cout << "\n";
-	for (int i = 0; i < 9; i++) {
-		CString str;
-		str.Format(_T("%lf"),test[i]);
-		cout << str;
-
-	}
-	//HERE -> </> <-
-
-	CStringArray matrixInString;
-	int counter = 0;
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			CString str;
-			str.Format(_T("%.10lf"), ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
-			matrixInString.Add(str);
-		}
-	}
-	CString convertedLine = _T("MW_TOOLPATH_TRANSFORM (") + matrixInString.GetAt(0) + _T(",") + matrixInString.GetAt(1) + _T(",") + matrixInString.GetAt(2)+ _T(",") +addTwoStrings(tx,x_cycle)+ _T(",") + matrixInString.GetAt(3) + _T(",") +
-		matrixInString.GetAt(4) + _T(",") + matrixInString.GetAt(5) + _T(",") + addTwoStrings(ty, y_cycle) +_T(",") + matrixInString.GetAt(6) + _T(",") + matrixInString.GetAt(7) + _T(",") + matrixInString.GetAt(8)+ _T(",") +addTwoStrings(tz, z_cycle) + _T(".,0,0,0,1") +_T(")");
-
-
-	moveLines.Add(convertedLine);
-
-}
-
 
 void ConvertHeidenhain::fillacCoordinates(CString line) {
 	CString convertedLine = _T("MW_MACHMOVE RAPID");
@@ -344,93 +221,6 @@ void ConvertHeidenhain::fillacCoordinates(CString line) {
 	convertedLine.Append(lineNr);
 	line = cutAtSpace(line, 1);
 	moveLines.Add(convertedLine + _T(" #") + line);
-}
-
-/// <summary>
-/// @startMachineCycle fügt den Anfangskopf einer Machinenoperation hinzu, diese Methode wird im laufe der Entwicklung durch die untere Methode ersetzt!!!!
-/// </summary>
-/// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
-/// @param [foundOpCycle] 
-/// @param [indexString] 
-/*void ConvertHeidenhain::startMachineCycle(CString line, bool& foundOpCycle, CString indexString) {
-
-	convertedFileContent.Add(mw_op_start);
-	convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
-	convertedFileContent.Add(mw_op_comment.GetAt(mw_list_counter));
-	convertedFileContent.Add(headadapter);
-	convertedFileContent.Add(postconfig);
-	convertedFileContent.Add(outputname);
-	//convertedFileContent.Add(safepoint);
-	convertedFileContent.Add(mw_tool_name_list.GetAt(mw_list_counter));  //////////////////////////
-	convertedFileContent.Add(mw_tool_comment);
-	convertedFileContent.Add(mw_transform);
-	convertedFileContent.Add(mw_toolpath_transform);
-	convertedFileContent.Add(shortestpath);
-	if (foundRTCPOFF == true) {
-		convertedFileContent.Add(_T("MW_RTCP OFF"));
-	}
-	convertedFileContent.Add(toolChangeTime);
-	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
-
-	for (int i = 0; i < moveLines.GetSize(); i++) {
-		convertedFileContent.Add(moveLines.GetAt(i));
-	}
-	moveLines.RemoveAll();
-	convertedFileContent.Add(mw_op_end);
-	mw_list_counter++;
-}*/
-
-/// <summary>
-/// 
-/// </summary>
-/// <param name="indexString"></param>
-void ConvertHeidenhain::startMachineCycle(CString indexString) {
-	
-	if (indexString.Find(_T("try catch")) == -1) {
-		convertedFileContent.Add(mw_op_start);
-		convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
-		convertedFileContent.Add(mw_op_comment.GetAt(0));
-		convertedFileContent.Add(headadapter);
-		convertedFileContent.Add(postconfig);
-		convertedFileContent.Add(outputname);
-		//convertedFileContent.Add(safepoint);
-		convertedFileContent.Add(mw_tool_name_list.GetAt(0));
-		convertedFileContent.Add(mw_tool_comment);
-		convertedFileContent.Add(mw_transform);
-		convertedFileContent.Add(mw_toolpath_transform);
-		convertedFileContent.Add(shortestpath);
-		
-	}
-	else {
-		convertedFileContent.Add(mw_op_start);
-		convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
-		convertedFileContent.Add(mw_op_comment.GetAt(mw_list_counter));
-		convertedFileContent.Add(headadapter);
-		convertedFileContent.Add(postconfig);
-		convertedFileContent.Add(outputname);
-		//convertedFileContent.Add(safepoint);
-		convertedFileContent.Add(mw_tool_name_list.GetAt(0));
-		convertedFileContent.Add(mw_tool_comment);
-		convertedFileContent.Add(mw_transform);
-		convertedFileContent.Add(mw_toolpath_transform);
-		convertedFileContent.Add(shortestpath);
-
-	}
-	if (foundRTCPOFF == true) {
-		convertedFileContent.Add(_T("MW_RTCP OFF"));
-	}
-	convertedFileContent.Add(toolChangeTime);
-	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
-	if (mw_toolCall.GetLength() > 1) {
-		convertedFileContent.Add(mw_toolCall);
-	}
-	for (int i = 0; i < moveLines.GetSize()-1; i++) {
-		convertedFileContent.Add(moveLines.GetAt(i));
-	}
-	mw_toolCall = moveLines.GetAt(moveLines.GetSize()-1);
-	moveLines.RemoveAll();
-	convertedFileContent.Add(mw_op_end);
-	mw_list_counter++;
 }
 
 /// <summary>
@@ -473,8 +263,8 @@ int ConvertHeidenhain::initialComment() {
 			findMovement(file.GetAt(i), i, false);
 		}
 		else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
-			//findOtherLine(file.GetAt(i));
-			findSequenceName(file.GetAt(i));
+			indexOfFirstToolCall = i;
+			break;
 		}
 		else if (file.GetAt(i).Find(_T("FN")) != -1) {
 			findOtherLine(file.GetAt(i));
@@ -746,7 +536,6 @@ void ConvertHeidenhain::findSequenceName(CString line) {
 			mw_op_comment_string.AppendChar(line.GetAt(i));
 		}	
 	}
-
 	mw_op_comment.Add(mw_op_comment_string);
 }
 
@@ -879,12 +668,12 @@ CString ConvertHeidenhain::cutAtSpace(CString line, int spaces, char c) {
 	CString labelName = _T("");
 	for (int i = 0; i < line.GetLength(); i++) {
 		if (line.GetAt(i) == c && spaceCount == i) {
-			break;
+			return labelName;
 		}
 		if (line.GetAt(i) == ' ') {
 			spaceCount++;
 		}
-		if (spaceCount >= spaces) {
+		if (spaceCount == spaces) {
 			labelName.AppendChar(line.GetAt(i));
 		}
 	}
@@ -919,7 +708,8 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 				fillacCoordinates(file.GetAt(i));
 			}
 			else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
-				findSequenceName(file.GetAt(i));
+				 sequenceWithoutToolChange(file.GetAt(i));
+				//findSequenceName(file.GetAt(i));
 			}
 			else if (file.GetAt(i).Find(_T("TOOL CALL")) != -1) {
 				//startMachineCycle(file.GetAt(i), foundOpCycle, indexString);
@@ -1176,4 +966,178 @@ void ConvertHeidenhain::updateTrans(CString trans, CString line) {
 		tz = _T("");
 		tz = fillPosition(line);
 	}
+}
+void ConvertHeidenhain::findMatrix(CString line) {
+
+	CString cuttedLine = cutAtSpace(line, 3);
+
+	fillMatrix(cuttedLine, a_matrix, 'A');
+	fillMatrix(cuttedLine, c_matrix, 'C');
+
+	double ra = _wtof(a_matrix);
+	double rc = _wtof(c_matrix);
+
+	if (ra == 0 && rc == 0) {
+		findOtherLine(line);
+	}
+	else {
+		calculateMatrix(ra, 0.00, rc);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ConvertHeidenhain::fillMatrix(CString line, CString& axis, char axisChar) {
+	axis = _T("");
+
+	bool foundSpace = false;
+	bool foundAxis = false;
+	bool foundFloatingpoint = false;
+
+	for (int i = 0; i < line.GetLength(); i++) {
+
+		if (foundAxis == true) {
+			if (line.GetAt(i) == ' ') {
+				if (foundFloatingpoint == false) {
+					axis.Append(_T(".0"));
+				}
+				break;
+			}
+			if (line.GetAt(i) == '.') {
+				foundFloatingpoint = true;
+			}
+			axis.AppendChar(line.GetAt(i));
+		}
+
+		if (line.GetAt(i) == axisChar) {
+			foundAxis = true;
+		}
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ConvertHeidenhain::calculateMatrix(double a, double b, double c) {
+	double determinant = 0;
+
+	a = a * -1;
+	b = b * -1;
+	c = c * -1;
+
+	double degreeFactor = 0.01745329252;
+
+	double ra[3][3];
+	double rb[3][3];
+	double rc[3][3];
+
+	double fs[3][3] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+	double fr[3][3] = { {0, 0, 0}, {0, 0, 0}, {0, 0, 0} };
+
+	ra[0][0] = 1;
+	ra[0][1] = 0;
+	ra[0][2] = 0;
+
+	ra[1][0] = 0;
+	ra[1][1] = cos(a * degreeFactor);
+	ra[1][2] = sin(a * degreeFactor);
+
+	ra[2][0] = 0;
+	ra[2][1] = -sin(a * degreeFactor);
+	ra[2][2] = cos(a * degreeFactor);
+
+	////////////////////////////////////////////////////////////////////////////
+	rb[0][0] = cos(b * degreeFactor);
+	rb[0][1] = 0;
+	rb[0][2] = -sin(b * degreeFactor);
+
+	rb[1][0] = 0;
+	rb[1][1] = 1;
+	rb[1][2] = 0;
+
+	rb[2][0] = sin(b * degreeFactor);
+	rb[2][1] = 0;
+	rb[2][2] = cos(b * degreeFactor);
+
+	////////////////////////////////////////////////////////////////////////////
+	rc[0][0] = cos(c * degreeFactor);
+	rc[0][1] = sin(c * degreeFactor);
+	rc[0][2] = 0;
+
+	rc[1][0] = -sin(c * degreeFactor);
+	rc[1][1] = cos(c * degreeFactor);
+	rc[1][2] = 0;
+
+	rc[2][0] = 0;
+	rc[2][1] = 0;
+	rc[2][2] = 1;
+
+	////////////////////////////////////////////////////////////////////////////
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 3; ++j) {
+			double sum = 0;
+			for (int k = 0; k < 3; ++k) {
+				sum += ra[k][i] * rc[j][k];
+			}
+			fs[i][j] = sum;
+		}
+	}
+
+	cout << "matrix A" << endl;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			printf("%.10lf |", ra[i][j]);
+		}
+		cout << endl;
+	}
+	cout << "matrix C" << endl;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			printf("%.10lf |", rc[i][j]);
+		}
+		cout << endl;
+	}
+	cout << "Result" << endl;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			printf("%.10lf |", fs[i][j]);
+		}
+		cout << endl;
+	}
+
+	cout << "inverse matrix" << endl;
+	for (int i = 0; i < 3; i++)
+		determinant = determinant + (fs[0][i] * (fs[1][(i + 1) % 3] * fs[2][(i + 2) % 3] - fs[1][(i + 2) % 3] * fs[2][(i + 1) % 3]));
+	cout << "\n\ndeterminant: " << determinant;
+	cout << "\n\nInverse of matrix is: \n";
+	double test[9];
+	int testCounter = 0;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++)
+			//printf("%.10lf |", ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
+			test[testCounter] = ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant;
+		testCounter++;
+		cout << "\n";
+	}
+	cout << "\n";
+	for (int i = 0; i < 9; i++) {
+		CString str;
+		str.Format(_T("%lf"), test[i]);
+		cout << str;
+
+	}
+	//HERE -> </> <-
+
+	CStringArray matrixInString;
+	int counter = 0;
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			CString str;
+			str.Format(_T("%.10lf"), ((fs[(j + 1) % 3][(i + 1) % 3] * fs[(j + 2) % 3][(i + 2) % 3]) - (fs[(j + 1) % 3][(i + 2) % 3] * fs[(j + 2) % 3][(i + 1) % 3])) / determinant);
+			matrixInString.Add(str);
+		}
+	}
+	CString convertedLine = _T("MW_TOOLPATH_TRANSFORM (") + matrixInString.GetAt(0) + _T(",") + matrixInString.GetAt(1) + _T(",") + matrixInString.GetAt(2) + _T(",") + addTwoStrings(tx, x_cycle) + _T(",") + matrixInString.GetAt(3) + _T(",") +
+		matrixInString.GetAt(4) + _T(",") + matrixInString.GetAt(5) + _T(",") + addTwoStrings(ty, y_cycle) + _T(",") + matrixInString.GetAt(6) + _T(",") + matrixInString.GetAt(7) + _T(",") + matrixInString.GetAt(8) + _T(",") + addTwoStrings(tz, z_cycle) + _T(".,0,0,0,1") + _T(")");
+
+
+	moveLines.Add(convertedLine);
+
 }

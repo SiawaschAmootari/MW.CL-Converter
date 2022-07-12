@@ -141,4 +141,5 @@ public:
 
 	int op_number_index = 0;
 	int mw_list_counter = 0;
+	int sequenceCounter = 0;
 };
