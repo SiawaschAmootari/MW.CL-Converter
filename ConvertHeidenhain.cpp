@@ -142,6 +142,7 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 		convertedFileContent.Add(mw_toolpath_transform);
 		convertedFileContent.Add(shortestpath);
 		sequenceCounter++;
+
 	}
 	else {
 		convertedFileContent.Add(mw_op_start);
