@@ -45,6 +45,7 @@ public:
 	void calculateMatrix(double a, double b, double c);
 	void fillMatrix(CString line, CString& axis, char axisChar);
 	void sequenceWithoutToolChange(CString line);
+	void nameInToolList(CString line);
 	//Methods with int return value
 	int initialComment();
 
@@ -55,6 +56,8 @@ public:
 	CString fillPosition(CString line);
 	CString cutCoordinateChar(CString coordinate);
 	CString addTwoStrings(CString numberOne, CString numberTwo);
+	
+	
 
 	//Methods with boolean return value
 	bool searchForToolChange(int index);
@@ -142,4 +145,5 @@ public:
 	int op_number_index = 0;
 	int mw_list_counter = 0;
 	int sequenceCounter = 0;
+	int toolListCounter = 0;
 };

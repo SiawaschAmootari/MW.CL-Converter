@@ -19,6 +19,7 @@ using namespace std;
 /// Leerer Konstruktor, wird nur in der NW.CL ConvertDlg.cpp Klasse genutzt um auf die Methoden deser Klasse
 /// zuzugreifen
 /// </summary>
+/// 
 ConvertHeidenhain::ConvertHeidenhain() {};
 
 /// <summary>
@@ -30,6 +31,7 @@ ConvertHeidenhain::ConvertHeidenhain() {};
 /// @param [filePath] enthält den Dateipfad der geöffneten Datei
 void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelIndex  ,CString filePath)
 {
+	
 	readConfigFile();
 	label_index = labelIndex;
 	path = filePath;
@@ -135,13 +137,13 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 		convertedFileContent.Add(headadapter);
 		convertedFileContent.Add(postconfig);
 		convertedFileContent.Add(outputname);
-		//convertedFileContent.Add(safepoint);
-		convertedFileContent.Add(mw_tool_name_list.GetAt(0));
+		convertedFileContent.Add(mw_tool_name_list.GetAt(toolListCounter));
 		convertedFileContent.Add(mw_tool_comment);
 		convertedFileContent.Add(mw_transform);
 		convertedFileContent.Add(mw_toolpath_transform);
 		convertedFileContent.Add(shortestpath);
 		sequenceCounter++;
+		toolListCounter;
 
 	}
 	else {
@@ -151,8 +153,7 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 		convertedFileContent.Add(headadapter);
 		convertedFileContent.Add(postconfig);
 		convertedFileContent.Add(outputname);
-		//convertedFileContent.Add(safepoint);
-		convertedFileContent.Add(mw_tool_name_list.GetAt(0));
+		convertedFileContent.Add(mw_tool_name_list.GetAt(toolListCounter));
 		convertedFileContent.Add(mw_tool_comment);
 		convertedFileContent.Add(mw_transform);
 		convertedFileContent.Add(mw_toolpath_transform);
@@ -162,12 +163,15 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 	if (foundRTCPOFF == true) {
 		convertedFileContent.Add(_T("MW_RTCP OFF"));
 	}
-	convertedFileContent.Add(toolChangeTime);
+	if (indexString.Find(_T("try catch")) == -1) {
+		convertedFileContent.Add(toolChangeTime);
+	}
+	
 	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
 	if (mw_toolCall.GetLength() > 1) {
 		convertedFileContent.Add(mw_toolCall);
 	}
-	for (int i = 0; i < moveLines.GetSize() - 1; i++) {
+	for (int i = 0; i < moveLines.GetSize() ; i++) {
 		convertedFileContent.Add(moveLines.GetAt(i));
 	}
 	mw_toolCall = moveLines.GetAt(moveLines.GetSize() - 1);
@@ -178,8 +182,10 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 
 void ConvertHeidenhain::sequenceWithoutToolChange(CString line) {
 	sequenceNamewotc = _T("MW_OP_COMMENT ");
-	CString cuttedLine = cutAtSpace(line, 3, '-');
-	CString sequenceName = _T("\"");
+	CString cuttedLine = cutAtSpace(line, 3, ' ');
+	CString sequenceName = _T("");
+	sequenceName.AppendChar(_T('"'));
+
 	sequenceName.Append(cuttedLine);
 	sequenceName.AppendChar(_T('"'));
 
@@ -306,6 +312,8 @@ int ConvertHeidenhain::initialComment() {
 	return indexOfFirstToolCall;
 }
 
+void ConvertHeidenhain::nameInToolList(CString line) {
+}
 
 /// <summary>
 /// @findMovement filtert die Zeile nach den Veränderungen der X,Y und Z koordinaten aus und speichert diese in den membervariablen der Klasse ConvertHeidenhain.cpp
@@ -474,7 +482,7 @@ void ConvertHeidenhain::findToolCall(CString line) {
 		if (line.GetAt(i) == '"' && foundToolNameComment==false) {
 			foundToolNameComment = true;
 		}
-		if (foundToolNameComment == true) {
+		if (foundToolNameComment == true && line.GetAt(i) != '\"') {
 			toolNameComment.AppendChar(line.GetAt(i));
 		}
 		//SPINDLFEEDRATE
@@ -508,7 +516,7 @@ void ConvertHeidenhain::findToolName(CString toolNameComment) {
 	}
 
 	mw_tool_comment.Append(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) + 1));
-	mw_tool_name.Append(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 2));
+	mw_tool_name.Append(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment)-2));
 	mw_tool_name.Append(_T(" USE_NUMBER "));
 	substring = tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).Right(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).GetLength() -
 		(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).Find(_T(" ")) + 1));
@@ -653,6 +661,17 @@ CString ConvertHeidenhain::cutAtSpace(CString line,int spaces) {
 			spaceCount++;
 		}	
 	}
+
+
+	if (labelName.GetAt(0) == ' ') {
+		CString label = _T("");
+		for (int i = 1; i < labelName.GetLength(); i++) {
+			label.AppendChar(labelName.GetAt(i));
+		}
+		return label;
+	}
+
+
 	return labelName;
 }
 
@@ -663,21 +682,33 @@ CString ConvertHeidenhain::cutAtSpace(CString line,int spaces) {
 /// <param name="line"></param>
 /// <param name="spaces"></param>
 /// <param name="c"></param>
-/// <returns></returns>
-CString ConvertHeidenhain::cutAtSpace(CString line, int spaces, char c) {
+/// <returns></returns
+CString ConvertHeidenhain::cutAtSpace(CString line, int spaces,char c) {
 	int spaceCount = 0;
 	CString labelName = _T("");
 	for (int i = 0; i < line.GetLength(); i++) {
-		if (line.GetAt(i) == c && spaceCount == i) {
-			return labelName;
+		if (spaceCount >= spaces&& line.GetAt(i)== ' ') {
+			break;
+		}
+		if (spaceCount >= spaces) {
+			labelName.AppendChar(line.GetAt(i));
 		}
 		if (line.GetAt(i) == ' ') {
 			spaceCount++;
 		}
-		if (spaceCount == spaces) {
-			labelName.AppendChar(line.GetAt(i));
-		}
+		
 	}
+
+
+	if (labelName.GetAt(0) == ' ') {
+		CString label = _T("");
+		for (int i = 1; i < labelName.GetLength(); i++) {
+			label.AppendChar(labelName.GetAt(i));
+		}
+		return label;
+	}
+
+
 	return labelName;
 }
 
@@ -860,6 +891,7 @@ void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent)
 	{
 		try
 		{
+
 			csfFile.Open(path, CStdioFile::modeRead);
 			CString sLine = _T("");
 			bool bRead;
@@ -899,6 +931,7 @@ void ConvertHeidenhain::openSubFiles(CString path, CStringArray& subFileContent)
 /// @param [fileName] der Dateiname der neuen Datei
 /// @returns [newFilePath] Der neue Pfad für die SubFiles
 CString ConvertHeidenhain::findSubFilesPath(CString fileName) {
+	
 	CString newFilePath = path;
 	int index = 0;
 	for (int i = newFilePath.GetLength() - 1; i > 0; i--) {
@@ -968,6 +1001,7 @@ void ConvertHeidenhain::updateTrans(CString trans, CString line) {
 		tz = fillPosition(line);
 	}
 }
+
 void ConvertHeidenhain::findMatrix(CString line) {
 
 	CString cuttedLine = cutAtSpace(line, 3);
