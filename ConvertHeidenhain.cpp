@@ -312,8 +312,6 @@ int ConvertHeidenhain::initialComment() {
 	return indexOfFirstToolCall;
 }
 
-void ConvertHeidenhain::nameInToolList(CString line) {
-}
 
 /// <summary>
 /// @findMovement filtert die Zeile nach den Veränderungen der X,Y und Z koordinaten aus und speichert diese in den membervariablen der Klasse ConvertHeidenhain.cpp
