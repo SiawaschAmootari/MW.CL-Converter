@@ -1,7 +1,7 @@
 #pragma once
 #include <afxcoll.h>
 #include <winnt.h>
-
+#include <map>
 
 using namespace std;
 
@@ -128,6 +128,7 @@ public:
 	CStringArray mw_op_comment;
 	CStringArray mw_op_number_list;
 	CStringArray mw_tool_name_list;
+	CStringArray mw_tool_comment_list;
 	CString mw_relmove_rapid = _T("MW_RELMOVE RAPID");
 	CString mw_relmove_feed = _T("MW_RELMOVE FEED");
 	CString time_move = _T(" TIME.1 MOVE=");
@@ -141,6 +142,7 @@ public:
 	CString mw_op_number = _T("MW_OP_NUMBER");
 	CString mw_transform = _T("");
 	CString sequenceNamewotc = _T("");
+	map<CString, CString> toolRepositoryMap;
 
 	int op_number_index = 0;
 	int mw_list_counter = 0;

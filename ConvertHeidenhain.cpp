@@ -138,7 +138,8 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 		convertedFileContent.Add(postconfig);
 		convertedFileContent.Add(outputname);
 		convertedFileContent.Add(mw_tool_name_list.GetAt(toolListCounter));
-		convertedFileContent.Add(mw_tool_comment);
+		CString mapKey = cutAtSpace(mw_tool_name_list.GetAt(toolListCounter),3);
+		convertedFileContent.Add(toolRepositoryMap.at(mapKey));
 		convertedFileContent.Add(mw_transform);
 		convertedFileContent.Add(mw_toolpath_transform);
 		convertedFileContent.Add(shortestpath);
@@ -154,7 +155,8 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 		convertedFileContent.Add(postconfig);
 		convertedFileContent.Add(outputname);
 		convertedFileContent.Add(mw_tool_name_list.GetAt(toolListCounter));
-		convertedFileContent.Add(mw_tool_comment);
+		CString mapKey = cutAtSpace(mw_tool_name_list.GetAt(toolListCounter), 3);
+		convertedFileContent.Add(toolRepositoryMap.at(mapKey));
 		convertedFileContent.Add(mw_transform);
 		convertedFileContent.Add(mw_toolpath_transform);
 		convertedFileContent.Add(shortestpath);
@@ -520,6 +522,8 @@ void ConvertHeidenhain::findToolName(CString toolNameComment) {
 		(tool_repositoryContent.GetAt(static_cast<INT_PTR>(indexToolNameComment) - 1).Find(_T(" ")) + 1));
 	mw_tool_name.Append(substring);
 	mw_tool_name_list.Add(mw_tool_name);
+	mw_tool_comment_list.Add(mw_tool_comment);
+	toolRepositoryMap.insert(substring, mw_tool_comment);
 }
 
 /// <summary>
