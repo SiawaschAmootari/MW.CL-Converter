@@ -129,7 +129,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 /// </summary>
 /// <param name="indexString"></param>
 void ConvertHeidenhain::startMachineCycle(CString indexString) {
-
+	
 	if (indexString.Find(_T("try catch")) == -1) {
 		convertedFileContent.Add(mw_op_start);
 		convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
@@ -144,7 +144,7 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 		convertedFileContent.Add(mw_toolpath_transform);
 		convertedFileContent.Add(shortestpath);
 		sequenceCounter++;
-		toolListCounter;
+		toolListCounter++;
 
 	}
 	else {
@@ -342,6 +342,9 @@ void ConvertHeidenhain::findMovement(CString line, int index, bool isMachMove) {
 			convertedLine = _T("MW_MACHMOVE RAPID  X+20.000 Y+400.000 Z+500.000 F10000");
 			isM91 = true;
 		}
+		else {
+			convertedLine = _T("MW_RELMOVE FEED ");
+		}
 	}
 	
 	if (isM91 == false) {
@@ -389,8 +392,7 @@ void ConvertHeidenhain::findMovement(CString line, int index, bool isMachMove) {
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 void ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString& g_coordinate) {
 
-	if (line.GetAt(index) == c && (line.GetAt(index + 1) == '+' || line.GetAt(index + 1) == '-')) {
-		
+	if (line.GetAt(index) == c && (line.GetAt(index + 1) == '+' || line.GetAt(index + 1) == '-')) {		
 		g_coordinate = _T("");
 		for (int j = index + 1; j < line.GetLength(); j++) {
 			if (line.GetAt(j) != ' ') {
@@ -523,7 +525,7 @@ void ConvertHeidenhain::findToolName(CString toolNameComment) {
 	mw_tool_name.Append(substring);
 	mw_tool_name_list.Add(mw_tool_name);
 	mw_tool_comment_list.Add(mw_tool_comment);
-	toolRepositoryMap.insert(substring, mw_tool_comment);
+	toolRepositoryMap.insert(pair<CString,CString>(substring, mw_tool_comment));
 }
 
 /// <summary>
@@ -664,7 +666,6 @@ CString ConvertHeidenhain::cutAtSpace(CString line,int spaces) {
 		}	
 	}
 
-
 	if (labelName.GetAt(0) == ' ') {
 		CString label = _T("");
 		for (int i = 1; i < labelName.GetLength(); i++) {
@@ -672,8 +673,6 @@ CString ConvertHeidenhain::cutAtSpace(CString line,int spaces) {
 		}
 		return label;
 	}
-
-
 	return labelName;
 }
 
