@@ -279,7 +279,7 @@ void CMWCLConverterDlg::OnBnClickedButtonConvert()
 
 	m_sFileConverted.Copy(firstHundredLines);
 
-	CString x = convert.x_cycle;
+	//CString x = convert.coordinates.getX_cycle();
 	for (int i = 0; i < convert.mw_op_comment.GetSize(); i++) {
 		m_LIST_MESSAGES.InsertString(0, convert.mw_op_comment.GetAt(i));
 	}

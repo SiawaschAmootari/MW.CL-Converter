@@ -185,6 +185,7 @@
   <ItemGroup>
     <ClInclude Include="Converter.h" />
     <ClInclude Include="ConvertHeidenhain.h" />
+    <ClInclude Include="Coordinates.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MW.CL Converter.h" />
     <ClInclude Include="MW.CL ConverterDlg.h" />
@@ -195,6 +196,7 @@
   <ItemGroup>
     <ClCompile Include="Converter.cpp" />
     <ClCompile Include="ConvertHeidenhain.cpp" />
+    <ClCompile Include="Coordinates.cpp" />
     <ClCompile Include="MW.CL Converter.cpp" />
     <ClCompile Include="MW.CL ConverterDlg.cpp" />
     <ClCompile Include="pch.cpp">

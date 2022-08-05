@@ -2,6 +2,7 @@
 #include <afxcoll.h>
 #include <winnt.h>
 #include <map>
+#include "Coordinates.h"
 
 using namespace std;
 
@@ -17,8 +18,9 @@ public:
 	CStringArray moveLines;
 	CStringArray file;
 	CStringArray configFile;
-	int label_index;
-
+	int label_index = 0;
+	
+	
 	//Methods without return value
 	void readConfigFile();
 	void startConverting(CStringArray& fileContent, int& labelIndex, CString filePath);
@@ -65,7 +67,7 @@ public:
 	//filterStrings
 	CString feedRate = _T("F");
 	CString spindle = _T("F");
-
+/*
 	CString x_coordinate = _T("+0.000");
 	CString y_coordinate = _T("+0.000");
 	CString z_coordinate = _T("+0.000");
@@ -79,7 +81,7 @@ public:
 	CString x_cycle = _T("+0.000");
 	CString y_cycle = _T("+0.000");
 	CString z_cycle = _T("+0.000");
-
+*/
 	//Variablen für die Transformation
 	//------------------------------------------
 	CString xx = _T("0");
