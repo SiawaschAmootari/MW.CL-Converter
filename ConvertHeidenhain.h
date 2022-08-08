@@ -3,6 +3,7 @@
 #include <winnt.h>
 #include <map>
 #include "Coordinates.h"
+#include "Transformation.h"
 
 using namespace std;
 
@@ -11,6 +12,9 @@ class ConvertHeidenhain : public CMWCLConverterDlg
 public:
 
 	ConvertHeidenhain();
+	Coordinates coordinates;
+	Transformation transformation;
+
 	CStringArray fileContent;
 	CStringArray convertedFileContent;
 	CStringArray tool_repositoryContent;
@@ -25,8 +29,8 @@ public:
 	void readConfigFile();
 	void startConverting(CStringArray& fileContent, int& labelIndex, CString filePath);
 	void findMovement(CString line, int index, bool isMachMove);
-	void fillCoordinates(CString line, char c, int index, CString& g_coordinate);
-	void addDecimalPlace(CString& line);
+	CString fillCoordinates(CString line, char c, int index, CString g_coordinate);
+	CString addDecimalPlace(CString line);
 	void findToolCall(CString line);
 	void openSubFiles(CString path, CStringArray& subFileContent);
 	void findFeedRate(CString line);
@@ -41,11 +45,11 @@ public:
 	void textFilter(CString line, int& index);
 	void outputTransform(CString line);
 	void findCycleDef(CString lineX, CString lineY, CString lineZ);
-	void updateTrans(CString trans, CString line);
+	//void updateTrans(CString trans, CString line);
 	void fillacCoordinates(CString line);
 	void findMatrix(CString line);
 	void calculateMatrix(double a, double b, double c);
-	void fillMatrix(CString line, CString& axis, char axisChar);
+	CString fillMatrix(CString line, CString axis, char axisChar);
 	void sequenceWithoutToolChange(CString line);
 	void nameInToolList(CString line);
 	//Methods with int return value
@@ -84,7 +88,7 @@ public:
 */
 	//Variablen für die Transformation
 	//------------------------------------------
-	CString xx = _T("0");
+	/*CString xx = _T("0");
 	CString xy = _T("0");
 	CString xz = _T("0");
 	CString tx = _T("0");
@@ -95,7 +99,7 @@ public:
 	CString zx = _T("0");
 	CString zy = _T("0");
 	CString zz = _T("0");
-	CString tz = _T("0");
+	CString tz = _T("0");*/
 	//-----------------------------------------
 
 

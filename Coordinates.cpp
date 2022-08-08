@@ -16,144 +16,161 @@
 #include <atlstr.h>
 Coordinates::Coordinates()
 {
+	this->x_coordinate = _T("+0.000");
+	this->y_coordinate = _T("+0.000");
+	this->z_coordinate = _T("+0.000");
+	this->a_coordinate = _T("+0.000");
+	this->c_coordinate = _T("+0.000");
+
+	this->a_matrix = _T("+0.000");
+	this->b_matrix = _T("+0.000");
+	this->c_matrix = _T("+0.000");
+
+	this->x_cycle = _T("+0.000");
+	this->y_cycle = _T("+0.000");
+	this->z_cycle = _T("+0.000");
+
+	this->cx = _T("+0.000");
+	this->cy = _T("+0.000");
+	this->cz = _T("+0.000");
 }
 
 CString Coordinates::getX_coordinate()
 {
-	return this->x_coordinate;
+	return x_coordinate;
 }
 
 CString Coordinates::getY_coordinate()
 {
-	return this->y_coordinate;
+	return y_coordinate;
 }
 
 CString Coordinates::getZ_coordinate()
 {
-	return this->z_coordinate;
+	return z_coordinate;
 }
 
 CString Coordinates::getA_coordinate()
 {
-	return this->a_coordinate;
+	return a_coordinate;
 }
 
 CString Coordinates::getC_coordinate()
 {
-	return this->c_coordinate;
+	return c_coordinate;
 }
 
 CString Coordinates::getA_matrix()
 {
-	return this->a_matrix;
+	return a_matrix;
 }
 
 CString Coordinates::getB_matrix()
 {
-	return this->b_matrix;
+	return b_matrix;
 }
 
 CString Coordinates::getC_matrix()
 {
-	return this->c_matrix;
+	return c_matrix;
 }
 
 CString Coordinates::getX_cycle()
 {
-	return this->x_cycle;
+	return x_cycle;
 }
 
 CString Coordinates::getY_cycle()
 {
-	return this->y_cycle;
+	return y_cycle;
 }
 
 CString Coordinates::getZ_cycle()
 {
-	return this->z_cycle;
+	return z_cycle;
 }
 
 CString Coordinates::getCx()
 {
-	return this->cx;
+	return cx;
 }
 
 CString Coordinates::getCy()
 {
-	return this->cy;
+	return cy;
 }
 
 CString Coordinates::getCz()
 {
-	return this->cz;
+	return cz;
 }
 
 void Coordinates::setX_coordinate(CString string)
 {
-	this->x_coordinate = string;
+	x_coordinate = string;
 }
 
 void Coordinates::setY_coordinate(CString string)
 {
-	this->y_coordinate = string;
+	y_coordinate = string;
 }
 
 void Coordinates::setZ_coordinate(CString string)
 {
-	this->z_coordinate = string;
+	z_coordinate = string;
 }
 
 void Coordinates::setA_coordinate(CString string)
 {
-	this->a_coordinate = string;
+	a_coordinate = string;
 }
 
 void Coordinates::setC_coordinate(CString string)
 {
-	this->c_coordinate = string;
+	c_coordinate = string;
 }
 
 void Coordinates::setA_matrix(CString string)
 {
-	this->a_matrix = string;
+	a_matrix = string;
 }
 
 void Coordinates::setC_matrix(CString string)
 {
-	this->c_matrix = string;
+	c_matrix = string;
 }
 
 void Coordinates::setB_matrix(CString string)
 {
-	this->b_matrix = string;
+	b_matrix = string;
 }
 
 void Coordinates::setX_cycle(CString string)
 {
-	this->x_cycle = string;
+	x_cycle = string;
 }
 
 void Coordinates::setY_cycle(CString string)
 {
-	this->y_cycle = string;
+	y_cycle = string;
 }
 
 void Coordinates::setZ_cycle(CString string)
 {
-	this->z_cycle = string;
+	z_cycle = string;
 }
 
 void Coordinates::setCx(CString string)
 {
-	this->cx = string;
+	cx = string;
 }
 
 void Coordinates::setCy(CString string)
 {
-	this->cy = string;
+	cy = string;
 }
 
 void Coordinates::setCz(CString string)
 {
-	this->cz = string;
+	cz = string;
 }

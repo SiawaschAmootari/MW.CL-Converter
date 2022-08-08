@@ -42,6 +42,9 @@
     <ClInclude Include="Coordinates.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Transformation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MW.CL Converter.cpp">
@@ -60,6 +63,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Coordinates.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Transformation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

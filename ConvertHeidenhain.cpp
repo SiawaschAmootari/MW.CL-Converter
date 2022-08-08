@@ -14,14 +14,16 @@
 #include <thread>
 #include <atlstr.h>
 
+
 using namespace std;
 /// <summary>
 /// Leerer Konstruktor, wird nur in der NW.CL ConvertDlg.cpp Klasse genutzt um auf die Methoden deser Klasse
 /// zuzugreifen
 /// </summary>
 /// 
-ConvertHeidenhain::ConvertHeidenhain() {};
-Coordinates coordinates;
+ConvertHeidenhain::ConvertHeidenhain() {}
+
+
 /// <summary>
 /// @startConverting wird als Verzweigungsmethode genutzt. Je nach Verzweigung gelang der eingelesene String in eine andere Methode in
 /// der dieser dann übersetzt wird.
@@ -351,15 +353,15 @@ void ConvertHeidenhain::findMovement(CString line, int index, bool isMachMove) {
 	if (isM91 == false) {
 		for (int i = 0; i < line.GetLength(); i++) {
 			//Refactor fillCoordinates
-			fillCoordinates(line, 'X', i,coordinates.getX_coordinate());
-			fillCoordinates(line, 'Y', i, coordinates.getY_coordinate());
-			fillCoordinates(line, 'Z', i, coordinates.getZ_coordinate());
+			coordinates.setX_coordinate(fillCoordinates(line, 'X', i, coordinates.getX_coordinate()));
+			coordinates.setY_coordinate(fillCoordinates(line, 'Y', i, coordinates.getY_coordinate()));
+			coordinates.setZ_coordinate(fillCoordinates(line, 'Z', i, coordinates.getZ_coordinate()));
 			//findFedRat(line, i, g_fedRat);
 		}
 
-		addDecimalPlace(coordinates.getX_coordinate());
-		addDecimalPlace(coordinates.getY_coordinate());
-		addDecimalPlace(coordinates.getZ_coordinate());
+		coordinates.setX_coordinate(addDecimalPlace(coordinates.getX_coordinate()));
+		coordinates.setY_coordinate(addDecimalPlace(coordinates.getY_coordinate()));
+		coordinates.setZ_coordinate(addDecimalPlace(coordinates.getZ_coordinate()));
 
 		convertedLine.Append(_T(" X") + coordinates.getX_coordinate());
 		convertedLine.Append(_T(" "));
@@ -391,7 +393,7 @@ void ConvertHeidenhain::findMovement(CString line, int index, bool isMachMove) {
 /// Die Methode sucht im String nach dem gesuchten Zeichen und befüllt die Koordinatenvariable neu.
 /// </summary>
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
-void ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString& g_coordinate) {
+CString ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString g_coordinate) {
 
 	if (line.GetAt(index) == c && (line.GetAt(index + 1) == '+' || line.GetAt(index + 1) == '-')) {		
 		g_coordinate = _T("");
@@ -405,6 +407,8 @@ void ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString
 		}
 		g_coordinate.Replace(',', '.');
 	}
+
+	return g_coordinate;
 }
 
 CString ConvertHeidenhain::addTwoStrings(CString numberOne, CString numberTwo) {
@@ -423,10 +427,11 @@ CString ConvertHeidenhain::addTwoStrings(CString numberOne, CString numberTwo) {
 /// ein .0 am ende des Strings hinzugefügt
 /// </summary>
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
-void ConvertHeidenhain::addDecimalPlace(CString& line) {
+CString ConvertHeidenhain::addDecimalPlace(CString line) {
 	if (line.Find(_T(".")) == -1) {
 		line.Append(_T(".000"));
 	}
+	return line;
 }
 
 /// <summary>
@@ -792,8 +797,9 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 /// @param [line]
 void ConvertHeidenhain::outputTransform(CString line) {
 	mw_transform = _T("MW_TRANSFORM holder_transform (1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1)");
-	mw_toolpath_transform = _T("MW_TOOLPATH_TRANSFORM (") + xx + _T(".,") + xy + _T(".,") + xz + _T(".,") + tx + _T(".,") + 
-		yx + _T(".,") + yy + _T(".,") + yz + _T(".,") + ty + _T(".,") + zx + _T(".,") + zy + _T(".,") + zz + _T(".,") + tz+_T(".,0,0,0,1)");
+	mw_toolpath_transform = _T("MW_TOOLPATH_TRANSFORM (") + transformation.getXx() + _T(".,") + transformation.getXy() + _T(".,") + transformation.getXz() + _T(".,") + transformation.getTx() + _T(".,") +
+		transformation.getYx() + _T(".,") + transformation.getYy() + _T(".,") + transformation.getYz() + _T(".,") + transformation.getTy() + _T(".,") + transformation.getZx() + _T(".,") + transformation.getZy()
+		+ _T(".,") + transformation.getZz() + _T(".,") + transformation.getTz() +_T(".,0,0,0,1)");
 	//convertedFileContent.Add(mw_transform);
 	//convertedFileContent.Add(mw_toolpath_transform);
 }
@@ -835,7 +841,8 @@ void ConvertHeidenhain::findCycleDef(CString lineX,CString lineY,CString lineZ) 
 			if (creoConfiContent.GetAt(i).GetAt(3) != '0') {
 				transPos.AppendChar(creoConfiContent.GetAt(i).GetAt(0)); 
 				transPos.AppendChar(creoConfiContent.GetAt(i).GetAt(1));
-				updateTrans(transPos,creoConfiContent.GetAt(i));
+				transformation = Transformation::updateTrans(transPos, creoConfiContent.GetAt(i), transformation);
+				//updateTrans(transPos,creoConfiContent.GetAt(i));
 				transPos = _T("");
 			}
 		}
@@ -853,13 +860,13 @@ void ConvertHeidenhain::findCycleDef(CString lineX,CString lineY,CString lineZ) 
 /// </summary>
 /// @param [line]
 /// @returns[filling]
-CString ConvertHeidenhain::fillPosition(CString line) {
+/*CString ConvertHeidenhain::fillPosition(CString line) {
 	CString filling = _T("");
 	for (int i = 3; i < line.GetLength(); i++) {
 		filling.AppendChar(line.GetAt(i));
 	}
 	return filling;
-}
+}*/
 
 /// <summary>
 /// Liest die config.txt Datei und Speichert alle Informationen in die unten angezeigten Variablen ein.
@@ -952,7 +959,7 @@ CString ConvertHeidenhain::findSubFilesPath(CString fileName) {
 /// </summary>
 /// @param [trans]
 /// @param [line]
-void ConvertHeidenhain::updateTrans(CString trans, CString line) {
+/*void ConvertHeidenhain::updateTrans(CString trans, CString line) {
 	if (trans == _T("xx")) {
 		xx = _T("");
 		xx = fillPosition(line);
@@ -1001,14 +1008,14 @@ void ConvertHeidenhain::updateTrans(CString trans, CString line) {
 		tz = _T("");
 		tz = fillPosition(line);
 	}
-}
+}*/
 
 void ConvertHeidenhain::findMatrix(CString line) {
 
 	CString cuttedLine = cutAtSpace(line, 3);
 
-	fillMatrix(cuttedLine,coordinates.getA_matrix(), 'A');
-	fillMatrix(cuttedLine, coordinates.getC_matrix(), 'C');
+	coordinates.setA_matrix(fillMatrix(cuttedLine,coordinates.getA_matrix(), 'A'));
+	coordinates.setC_matrix(fillMatrix(cuttedLine, coordinates.getC_matrix(), 'C'));
 
 	double ra = _wtof(coordinates.getA_matrix());
 	double rc = _wtof(coordinates.getC_matrix());
@@ -1022,7 +1029,7 @@ void ConvertHeidenhain::findMatrix(CString line) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ConvertHeidenhain::fillMatrix(CString line, CString& axis, char axisChar) {
+CString ConvertHeidenhain::fillMatrix(CString line, CString axis, char axisChar) {
 	axis = _T("");
 
 	bool foundSpace = false;
@@ -1048,6 +1055,7 @@ void ConvertHeidenhain::fillMatrix(CString line, CString& axis, char axisChar) {
 			foundAxis = true;
 		}
 	}
+	return axis;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1170,8 +1178,8 @@ void ConvertHeidenhain::calculateMatrix(double a, double b, double c) {
 			matrixInString.Add(str);
 		}
 	}
-	CString convertedLine = _T("MW_TOOLPATH_TRANSFORM (") + matrixInString.GetAt(0) + _T(",") + matrixInString.GetAt(1) + _T(",") + matrixInString.GetAt(2) + _T(",") + addTwoStrings(tx,coordinates.getX_cycle()) + _T(",") + matrixInString.GetAt(3) + _T(",") +
-		matrixInString.GetAt(4) + _T(",") + matrixInString.GetAt(5) + _T(",") + addTwoStrings(ty, coordinates.getY_cycle()) + _T(",") + matrixInString.GetAt(6) + _T(",") + matrixInString.GetAt(7) + _T(",") + matrixInString.GetAt(8) + _T(",") + addTwoStrings(tz, coordinates.getZ_cycle()) + _T(".,0,0,0,1") + _T(")");
+	CString convertedLine = _T("MW_TOOLPATH_TRANSFORM (") + matrixInString.GetAt(0) + _T(",") + matrixInString.GetAt(1) + _T(",") + matrixInString.GetAt(2) + _T(",") + addTwoStrings(transformation.getTx(), coordinates.getX_cycle()) + _T(",") + matrixInString.GetAt(3) + _T(",") +
+		matrixInString.GetAt(4) + _T(",") + matrixInString.GetAt(5) + _T(",") + addTwoStrings(transformation.getTy(), coordinates.getY_cycle()) + _T(",") + matrixInString.GetAt(6) + _T(",") + matrixInString.GetAt(7) + _T(",") + matrixInString.GetAt(8) + _T(",") + addTwoStrings(transformation.getTz(), coordinates.getZ_cycle()) + _T(".,0,0,0,1") + _T(")");
 
 
 	moveLines.Add(convertedLine);
