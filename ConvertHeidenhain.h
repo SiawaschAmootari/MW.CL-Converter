@@ -29,8 +29,6 @@ public:
 	void readConfigFile();
 	void startConverting(CStringArray& fileContent, int& labelIndex, CString filePath);
 	void findMovement(CString line, int index, bool isMachMove);
-	CString fillCoordinates(CString line, char c, int index, CString g_coordinate);
-	CString addDecimalPlace(CString line);
 	void findToolCall(CString line);
 	void openSubFiles(CString path, CStringArray& subFileContent);
 	void findFeedRate(CString line);
@@ -48,8 +46,6 @@ public:
 	//void updateTrans(CString trans, CString line);
 	void fillacCoordinates(CString line);
 	void findMatrix(CString line);
-	void calculateMatrix(double a, double b, double c);
-	CString fillMatrix(CString line, CString axis, char axisChar);
 	void sequenceWithoutToolChange(CString line);
 	void nameInToolList(CString line);
 	//Methods with int return value
@@ -62,8 +58,10 @@ public:
 	CString fillPosition(CString line);
 	CString cutCoordinateChar(CString coordinate);
 	CString addTwoStrings(CString numberOne, CString numberTwo);
-	
-	
+	CString calculateMatrix(double a, double b, double c);
+	CString fillMatrix(CString line, CString axis, char axisChar);
+	CString fillCoordinates(CString line, char c, int index, CString g_coordinate);
+	CString addDecimalPlace(CString line);
 
 	//Methods with boolean return value
 	bool searchForToolChange(int index);

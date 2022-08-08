@@ -213,14 +213,18 @@ bool ConvertHeidenhain::searchForToolChange(int index) {
 }
 
 void ConvertHeidenhain::fillacCoordinates(CString line) {
+	CString newA=_T("");
+	CString newC=_T("");
 	CString convertedLine = _T("MW_MACHMOVE RAPID");
 	for (int i = 0; i < line.GetLength(); i++) {
-		fillCoordinates(line, 'A', i, coordinates.getA_coordinate());
-		fillCoordinates(line, 'C', i, coordinates.getC_coordinate());
+	//coordinates.setA_coordinate(fillCoordinates(line, 'A', i, coordinates.getA_coordinate()));
+	//coordinates.setC_coordinate(fillCoordinates(line, 'C', i, coordinates.getC_coordinate()));
+		newA = fillCoordinates(line, 'A', i, coordinates.getA_coordinate());
+		newC = fillCoordinates(line, 'C', i, coordinates.getC_coordinate());
 	}
 
-	addDecimalPlace(coordinates.getA_coordinate());
-	addDecimalPlace(coordinates.getC_coordinate());
+	coordinates.setA_coordinate(addDecimalPlace(newA));
+	coordinates.setC_coordinate(addDecimalPlace(newC));
 
 	convertedLine.Append(_T(" A") + coordinates.getA_coordinate());
 	convertedLine.Append(_T(" "));
@@ -395,7 +399,7 @@ void ConvertHeidenhain::findMovement(CString line, int index, bool isMachMove) {
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
 CString ConvertHeidenhain::fillCoordinates(CString line, char c, int index, CString g_coordinate) {
 
-	if (line.GetAt(index) == c && (line.GetAt(index + 1) == '+' || line.GetAt(index + 1) == '-')) {		
+	if (line.GetAt(index) == c && (line.GetAt(index+1) == '+' || line.GetAt(index+1) == '-')) {		
 		g_coordinate = _T("");
 		for (int j = index + 1; j < line.GetLength(); j++) {
 			if (line.GetAt(j) != ' ') {
@@ -564,14 +568,16 @@ void ConvertHeidenhain::findSequenceName(CString line) {
 /// @param [lineCC] die erste Zeile im MCD
 /// @param [lineC] die zweite Zeile aus dem MCD
 void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
+	CString newX = _T("");
+	CString newY = _T("");
 	for (int i = 0; i < lineCC.GetLength(); i++) {
 		//Refactor fillCoordinate
-		fillCoordinates(lineCC, 'X', i, coordinates.getX_coordinate());
-		fillCoordinates(lineCC, 'Y', i, coordinates.getY_coordinate());
+	newX=fillCoordinates(lineCC, 'X', i, coordinates.getX_coordinate());
+	newY=fillCoordinates(lineCC, 'Y', i, coordinates.getY_coordinate());
 	}
 
-	addDecimalPlace(coordinates.getX_coordinate());
-	addDecimalPlace(coordinates.getY_coordinate());
+	coordinates.setX_coordinate(addDecimalPlace(newX));
+	coordinates.setY_coordinate(addDecimalPlace(newY));
 
 	double ccX = _wtof(coordinates.getX_coordinate());
 	double ccY = _wtof(coordinates.getY_coordinate());
@@ -580,14 +586,16 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	CString CClineY = coordinates.getY_coordinate();
 	CString gotoLine = _T("");
 
+	newX = _T("");
+	newY = _T("");
+	
 	for (int i = 0; i < lineC.GetLength(); i++) {
 		//Refactor fillCoordinate
-		fillCoordinates(lineC, 'X', i, coordinates.getX_coordinate());
-		fillCoordinates(lineC, 'Y', i, coordinates.getY_coordinate());
+		newX=fillCoordinates(lineCC, 'X', i, coordinates.getX_coordinate());
+		newY=fillCoordinates(lineCC, 'Y', i, coordinates.getY_coordinate());
 	}
-
-	addDecimalPlace(coordinates.getX_coordinate());
-	addDecimalPlace(coordinates.getY_coordinate());
+	coordinates.setX_coordinate(addDecimalPlace(newX));
+	coordinates.setY_coordinate(addDecimalPlace(newY));
 
 	double cX = _wtof(coordinates.getX_coordinate());
 	double cY = _wtof(coordinates.getY_coordinate());
@@ -842,7 +850,6 @@ void ConvertHeidenhain::findCycleDef(CString lineX,CString lineY,CString lineZ) 
 				transPos.AppendChar(creoConfiContent.GetAt(i).GetAt(0)); 
 				transPos.AppendChar(creoConfiContent.GetAt(i).GetAt(1));
 				transformation = Transformation::updateTrans(transPos, creoConfiContent.GetAt(i), transformation);
-				//updateTrans(transPos,creoConfiContent.GetAt(i));
 				transPos = _T("");
 			}
 		}
@@ -1024,7 +1031,7 @@ void ConvertHeidenhain::findMatrix(CString line) {
 		findOtherLine(line);
 	}
 	else {
-		calculateMatrix(ra, 0.00, rc);
+		moveLines.Add(calculateMatrix(ra, 0.00, rc));
 	}
 }
 
@@ -1059,7 +1066,7 @@ CString ConvertHeidenhain::fillMatrix(CString line, CString axis, char axisChar)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ConvertHeidenhain::calculateMatrix(double a, double b, double c) {
+CString ConvertHeidenhain::calculateMatrix(double a, double b, double c) {
 	double determinant = 0;
 
 	a = a * -1;
@@ -1167,7 +1174,6 @@ void ConvertHeidenhain::calculateMatrix(double a, double b, double c) {
 		cout << str;
 
 	}
-	//HERE -> </> <-
 
 	CStringArray matrixInString;
 	int counter = 0;
@@ -1181,7 +1187,6 @@ void ConvertHeidenhain::calculateMatrix(double a, double b, double c) {
 	CString convertedLine = _T("MW_TOOLPATH_TRANSFORM (") + matrixInString.GetAt(0) + _T(",") + matrixInString.GetAt(1) + _T(",") + matrixInString.GetAt(2) + _T(",") + addTwoStrings(transformation.getTx(), coordinates.getX_cycle()) + _T(",") + matrixInString.GetAt(3) + _T(",") +
 		matrixInString.GetAt(4) + _T(",") + matrixInString.GetAt(5) + _T(",") + addTwoStrings(transformation.getTy(), coordinates.getY_cycle()) + _T(",") + matrixInString.GetAt(6) + _T(",") + matrixInString.GetAt(7) + _T(",") + matrixInString.GetAt(8) + _T(",") + addTwoStrings(transformation.getTz(), coordinates.getZ_cycle()) + _T(".,0,0,0,1") + _T(")");
 
-
-	moveLines.Add(convertedLine);
-
+	//moveLines.Add(convertedLine);
+	return convertedLine;
 }
