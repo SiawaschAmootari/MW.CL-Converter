@@ -4,24 +4,27 @@
 #include <map>
 #include "Coordinates.h"
 #include "Transformation.h"
-
+#include "ConfigFile.h"
+#include "ConversionAlgorithms.h"
 using namespace std;
 
 class ConvertHeidenhain : public CMWCLConverterDlg
 {
 public:
-
+	//Objects
 	ConvertHeidenhain();
 	Coordinates coordinates;
 	Transformation transformation;
+	ConfigFile configFile;
 
+	//Variables
 	CStringArray fileContent;
 	CStringArray convertedFileContent;
 	CStringArray tool_repositoryContent;
 	CStringArray creoConfiContent;
 	CStringArray moveLines;
 	CStringArray file;
-	CStringArray configFile;
+	//CStringArray configFileArray;
 	int label_index = 0;
 	
 	
@@ -43,16 +46,14 @@ public:
 	void textFilter(CString line, int& index);
 	void outputTransform(CString line);
 	void findCycleDef(CString lineX, CString lineY, CString lineZ);
-	//void updateTrans(CString trans, CString line);
 	void fillacCoordinates(CString line);
 	void findMatrix(CString line);
 	void sequenceWithoutToolChange(CString line);
 	void nameInToolList(CString line);
-	//Methods with int return value
 	int initialComment();
 
 	//Methods with CString return value
-	CString cutAtSpace(CString line, int spaces);
+	/*CString cutAtSpace(CString line, int spaces);
 	CString cutAtSpace(CString line, int spaces, char c);
 	CString findSubFilesPath(CString fileName);
 	CString fillPosition(CString line);
@@ -61,7 +62,7 @@ public:
 	CString calculateMatrix(double a, double b, double c);
 	CString fillMatrix(CString line, CString axis, char axisChar);
 	CString fillCoordinates(CString line, char c, int index, CString g_coordinate);
-	CString addDecimalPlace(CString line);
+	CString addDecimalPlace(CString line);*/
 
 	//Methods with boolean return value
 	bool searchForToolChange(int index);
@@ -103,6 +104,7 @@ public:
 
 	//Variablen für die Config Datei
 	//-----------------------------------------
+	/*
 	CString version = _T("");
 	CString unit = _T("");
 	CString initial = _T("");
@@ -116,9 +118,10 @@ public:
 	CString toolChangePoint_z = _T("");
 	CString toolChangePoint_xy = _T("");
 	CString mw_toolCall = _T("");
+	*/
 	//-----------------------------------------
 
-	CString findLineNr(CString line);
+	//CString findLineNr(CString line);
 	CString path;
 
 	//bools for algortihm
