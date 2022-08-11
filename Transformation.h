@@ -16,6 +16,7 @@ private:
 	CString zy = _T("0");
 	CString zz = _T("0");
 	CString tz = _T("0");
+
 public:
 
 	Transformation();

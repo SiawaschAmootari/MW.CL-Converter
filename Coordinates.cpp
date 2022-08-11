@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <thread>
 #include <atlstr.h>
+
 Coordinates::Coordinates()
 {
 	this->x_coordinate = _T("+0.000");

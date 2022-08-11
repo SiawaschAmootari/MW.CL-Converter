@@ -24,107 +24,42 @@ public:
 	CStringArray creoConfiContent;
 	CStringArray moveLines;
 	CStringArray file;
-	//CStringArray configFileArray;
 	int label_index = 0;
 	
 	
 	//Methods without return value
 	void readConfigFile();
 	void startConverting(CStringArray& fileContent, int& labelIndex, CString filePath);
-	void findMovement(CString line, int index, bool isMachMove);
+	void filterMovement(CString line, int index, bool isMachMove);
 	void findToolCall(CString line);
 	void openSubFiles(CString path, CStringArray& subFileContent);
-	void findFeedRate(CString line);
-	void findToolName(CString toolNameComment);
-	void findSequenceName(CString line);
+	//void findFeedRate(CString line);
+	void filterToolName(CString toolNameComment);
+	//void findSequenceName(CString line);
 	void startMachineCycle(CString line, bool& foundOpCycle, CString indexString);
 	void startMachineCycle(CString indexString);
 	void findCircle(CString lineCC, CString lineC);
-	void findOtherLine(CString line);
-	void findOtherLine(CString line, char c);
+	//void findOtherLine(CString line);
+	//void findOtherLine(CString line, char c);
 	void jumpToLabel(CString line);
 	void textFilter(CString line, int& index);
 	void outputTransform(CString line);
-	void findCycleDef(CString lineX, CString lineY, CString lineZ);
+	void filterCycleDef(CString lineX, CString lineY, CString lineZ);
 	void fillacCoordinates(CString line);
 	void findMatrix(CString line);
 	void sequenceWithoutToolChange(CString line);
 	void nameInToolList(CString line);
 	int initialComment();
 
-	//Methods with CString return value
-	/*CString cutAtSpace(CString line, int spaces);
-	CString cutAtSpace(CString line, int spaces, char c);
-	CString findSubFilesPath(CString fileName);
-	CString fillPosition(CString line);
-	CString cutCoordinateChar(CString coordinate);
-	CString addTwoStrings(CString numberOne, CString numberTwo);
-	CString calculateMatrix(double a, double b, double c);
-	CString fillMatrix(CString line, CString axis, char axisChar);
-	CString fillCoordinates(CString line, char c, int index, CString g_coordinate);
-	CString addDecimalPlace(CString line);*/
-
 	//Methods with boolean return value
-	bool searchForToolChange(int index);
+	//bool searchForToolChange(int index);
 
 	//filterStrings
 	CString feedRate = _T("F");
 	CString spindle = _T("F");
-/*
-	CString x_coordinate = _T("+0.000");
-	CString y_coordinate = _T("+0.000");
-	CString z_coordinate = _T("+0.000");
-	CString a_coordinate = _T("+0.000");
-	CString c_coordinate = _T("+0.000");
-
-	CString a_matrix = _T("+0.000");
-	CString b_matrix = _T("+0.000");
-	CString c_matrix = _T("+0.000");
-
-	CString x_cycle = _T("+0.000");
-	CString y_cycle = _T("+0.000");
-	CString z_cycle = _T("+0.000");
-*/
-	//Variablen für die Transformation
-	//------------------------------------------
-	/*CString xx = _T("0");
-	CString xy = _T("0");
-	CString xz = _T("0");
-	CString tx = _T("0");
-	CString yx = _T("0");
-	CString yy = _T("0");
-	CString yz = _T("0");
-	CString ty = _T("0");
-	CString zx = _T("0");
-	CString zy = _T("0");
-	CString zz = _T("0");
-	CString tz = _T("0");*/
-	//-----------------------------------------
-
-
-	//Variablen für die Config Datei
-	//-----------------------------------------
-	/*
-	CString version = _T("");
-	CString unit = _T("");
-	CString initial = _T("");
-	CString outputname = _T("");
-	CString safepoint = _T("");
-	CString headadapter = _T("");
-	CString postconfig = _T("");
-	CString shortestpath = _T("");
-	CString toolChangeTime = _T("");
-	CString toolChangePoint_x = _T("");
-	CString toolChangePoint_z = _T("");
-	CString toolChangePoint_xy = _T("");
-	CString mw_toolCall = _T("");
-	*/
-	//-----------------------------------------
-
-	//CString findLineNr(CString line);
 	CString path;
 
-	//bools for algortihm
+	//bools for algortihms
 	bool foundFMAX = false;
 	bool foundFQ = false;
 	bool foundRTCPOFF = false;

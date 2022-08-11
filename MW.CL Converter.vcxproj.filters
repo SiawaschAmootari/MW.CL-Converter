@@ -51,6 +51,9 @@
     <ClInclude Include="ConversionAlgorithms.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SearchAlgorithms.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MW.CL Converter.cpp">
@@ -78,6 +81,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ConversionAlgorithms.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SearchAlgorithms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
