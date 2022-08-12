@@ -39,6 +39,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	readConfigFile();
 	label_index = labelIndex;
 	path = filePath;
+
 	CString tool_repositoryName=_T("tool_repository.cl");
 	CString creoConfiName = _T("creo2mw.ini");
 	CString tool_repositoryPath = ConversionAlgorithms::findSubFilesPath(tool_repositoryName,path);
@@ -187,11 +188,11 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 }
 
 void ConvertHeidenhain::sequenceWithoutToolChange(CString line) {
-	sequenceNamewotc = _T("MW_OP_COMMENT ");
+	CString sequenceNamewotc = _T("MW_OP_COMMENT ");
 	CString cuttedLine = ConversionAlgorithms::cutAtSpace(line, 3, ' ');
 	CString sequenceName = _T("");
+	
 	sequenceName.AppendChar(_T('"'));
-
 	sequenceName.Append(cuttedLine);
 	sequenceName.AppendChar(_T('"'));
 
@@ -204,8 +205,7 @@ void ConvertHeidenhain::fillacCoordinates(CString line) {
 	CString newC=_T("");
 	CString convertedLine = _T("MW_MACHMOVE RAPID");
 	for (int i = 0; i < line.GetLength(); i++) {
-	//coordinates.setA_coordinate(fillCoordinates(line, 'A', i, coordinates.getA_coordinate()));
-	//coordinates.setC_coordinate(fillCoordinates(line, 'C', i, coordinates.getC_coordinate()));
+	
 		newA = ConversionAlgorithms::fillCoordinates(line, 'A', i, coordinates.getA_coordinate());
 		newC = ConversionAlgorithms::fillCoordinates(line, 'C', i, coordinates.getC_coordinate());
 	}

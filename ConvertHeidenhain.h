@@ -33,14 +33,10 @@ public:
 	void filterMovement(CString line, int index, bool isMachMove);
 	void findToolCall(CString line);
 	void openSubFiles(CString path, CStringArray& subFileContent);
-	//void findFeedRate(CString line);
 	void filterToolName(CString toolNameComment);
-	//void findSequenceName(CString line);
 	void startMachineCycle(CString line, bool& foundOpCycle, CString indexString);
 	void startMachineCycle(CString indexString);
 	void findCircle(CString lineCC, CString lineC);
-	//void findOtherLine(CString line);
-	//void findOtherLine(CString line, char c);
 	void jumpToLabel(CString line);
 	void textFilter(CString line, int& index);
 	void outputTransform(CString line);
@@ -83,7 +79,7 @@ public:
 	CString mw_op_end = _T("MW_OP_END");
 	CString mw_op_number = _T("MW_OP_NUMBER");
 	CString mw_transform = _T("");
-	CString sequenceNamewotc = _T("");
+	//CString sequenceNamewotc = _T("");
 	map<CString, CString> toolRepositoryMap;
 
 	int op_number_index = 0;
