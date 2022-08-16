@@ -532,6 +532,7 @@ void ConvertHeidenhain::jumpToLabel(CString line) {
 				filterMovement(file.GetAt(i), i,false);
 			}
 			else if (file.GetAt(i).Find(_T("A+")) != -1 || file.GetAt(i).Find(_T("C+")) != -1 || file.GetAt(i).Find(_T("A-")) != -1 || file.GetAt(i).Find(_T("C-")) != -1) {
+				moveLines.Add(SearchAlgorithms::findOtherLine(file.GetAt(i), mw_other_line));
 				fillacCoordinates(file.GetAt(i));
 			}
 			else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
