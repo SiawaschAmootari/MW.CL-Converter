@@ -45,7 +45,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 	CString tool_repositoryPath = ConversionAlgorithms::findSubFilesPath(tool_repositoryName,path);
 	CString creoConfiPath = ConversionAlgorithms::findSubFilesPath(creoConfiName,path);
 	CString indexString;
-
+	CString testString;
 	openSubFiles(tool_repositoryPath ,tool_repositoryContent);
 	openSubFiles(creoConfiPath,creoConfiContent);
 	file.Copy(fileContent);
@@ -173,7 +173,7 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 	if (indexString.Find(_T("try catch")) == -1) {
 		convertedFileContent.Add(configFile.getToolChangeTime());
 	}
-	
+	// test
 	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
 	if (configFile.getMw_toolCall().GetLength() > 1) {
 		convertedFileContent.Add(configFile.getMw_toolCall());
@@ -464,7 +464,11 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	CString CClineX = coordinates.getX_coordinate();
 	CString CClineY = coordinates.getY_coordinate();
 	CString gotoLine = _T("");
-
+	
+	coordinates.setCx(newX);
+	coordinates.setCy(newY);
+	coordinates.setCz(coordinates.getZ_coordinate());
+	
 	newX = _T("");
 	newY = _T("");
 	
@@ -480,14 +484,18 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	double cY = _wtof(coordinates.getY_coordinate());
 	CString ClineX = coordinates.getX_coordinate();
 	CString ClineY = coordinates.getX_coordinate();
+
 	double result = sqrt(((cX - ccX) * (cX - ccX)) + ((cY - ccY) * (cY - ccY)));//?
 
+	CString ni_nj_nk = _T("");
 	CString rotationDirection;
 	if (lineC.Find(_T("DR+")) != -1 || lineC.Find(_T("DR +")) != -1) {
 		rotationDirection = _T("R+");
+		ni_nj_nk = _T(" NI0. NJ0. NK1. ");
 	}
 	else if (lineC.Find(_T("DR-")) != -1 || lineC.Find(_T("DR -")) != -1) {
 		rotationDirection = _T("R-");
+		ni_nj_nk = _T(" NI0. NJ0. NK-1. ");
 	}
 
 	CString resultString;
@@ -501,7 +509,8 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	convertedLineOne = _T("MW_RELMOVE FEED  X") + CClineX + _T(" Y") + CClineY + _T(" ") +feedRate +_T(" MOVE=")+lineNr+ _T("#")+lineCC;
 	lineNr = ConversionAlgorithms::findLineNr(lineC);
 	lineC = ConversionAlgorithms::cutAtSpace(lineC, 1);
-	convertedLineTwo = _T("MW_RELARCMOVE FEED  X")+ ClineX + _T(" Y") + ClineY + _T(" ")+rotationDirection+resultString+_T(" NI0. NJ0. NK1. ")+feedRate+ _T(" MOVE=") + lineNr+_T("#") + lineC;
+	convertedLineTwo = _T("MW_RELARCMOVE FEED  X")+ ClineX + _T(" Y") + ClineY + _T(" CX")+coordinates.getCx()+_T(" CY")+ coordinates.getCy() + _T(" CZ")+ coordinates.getCz() + _T(" ")
+		+ ni_nj_nk + feedRate + _T(" MOVE=") + lineNr + _T("#") + lineC;
 
 	moveLines.Add(convertedLineOne);
 	moveLines.Add(convertedLineTwo);
@@ -702,5 +711,6 @@ void ConvertHeidenhain::findMatrix(CString line) {
 	}
 	else {
 		moveLines.Add(ConversionAlgorithms::calculateMatrix(ra, 0.00, rc,transformation,coordinates));
+		moveLines.Add(_T("MW_MACHMOVE C+180 SUBMOVE"));
 	}
 }
