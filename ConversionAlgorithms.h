@@ -11,7 +11,7 @@ public:
 	static CString addTwoStrings(CString numberOne, CString numberTwo);
 	static CString calculateMatrix(double a, double b, double c, Transformation transformation, Coordinates coordinates);
 	static CString fillMatrix(CString line, CString axis, char axisChar);
-	static CString fillCoordinates(CString line, char c, int index, CString g_coordinate);
+	static CString fillCoordinates(CString line, char c, int index);
 	static CString addDecimalPlace(CString line);
 	static CString findLineNr(CString line);
 };

@@ -110,6 +110,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			indexString = _T("");
 			if (foundOpCycle == true) {
 				startMachineCycle(_T("hello"));
+				
 			}
 			foundOpCycle = true;
 		}
@@ -173,12 +174,12 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 	if (indexString.Find(_T("try catch")) == -1) {
 		convertedFileContent.Add(configFile.getToolChangeTime());
 	}
-	// test
+	
 	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
 	if (configFile.getMw_toolCall().GetLength() > 1) {
 		convertedFileContent.Add(configFile.getMw_toolCall());
 	}
-	for (int i = 0; i < moveLines.GetSize() ; i++) {
+	for (int i = 0; i < moveLines.GetSize()-1 ; i++) {
 		convertedFileContent.Add(moveLines.GetAt(i));
 	}
 	configFile.setMw_toolCall(moveLines.GetAt(moveLines.GetSize() - 1));
@@ -201,18 +202,28 @@ void ConvertHeidenhain::sequenceWithoutToolChange(CString line) {
 }
 
 void ConvertHeidenhain::fillacCoordinates(CString line) {
+	bool aIsFilled = false;
+	bool cIsFilled = false;
 	CString newA=_T("");
 	CString newC=_T("");
 	CString convertedLine = _T("MW_MACHMOVE RAPID");
-	for (int i = 0; i < line.GetLength(); i++) {
-	
-		newA = ConversionAlgorithms::fillCoordinates(line, 'A', i, coordinates.getA_coordinate());
-		newC = ConversionAlgorithms::fillCoordinates(line, 'C', i, coordinates.getC_coordinate());
+	for (int i = 0; i < line.GetLength()-1; i++) {
+		
+		if (line.GetAt(i) == 'A'&& (line.GetAt(i+1) == '+'|| line.GetAt(i + 1) == '-') && aIsFilled == false) {
+			newA = ConversionAlgorithms::fillCoordinates(line, 'A', i);
+			coordinates.setA_coordinate(ConversionAlgorithms::addDecimalPlace(newA));
+			aIsFilled = true;
+		}
+		if (line.GetAt(i) == 'C' && cIsFilled == false) {
+			newC = ConversionAlgorithms::fillCoordinates(line, 'C', i);
+			coordinates.setC_coordinate(ConversionAlgorithms::addDecimalPlace(newC));
+			cIsFilled = true;
+		}
 	}
 
-	coordinates.setA_coordinate(ConversionAlgorithms::addDecimalPlace(newA));
+	/*coordinates.setA_coordinate(ConversionAlgorithms::addDecimalPlace(newA));
 	coordinates.setC_coordinate(ConversionAlgorithms::addDecimalPlace(newC));
-
+	*/
 	convertedLine.Append(_T(" A") + coordinates.getA_coordinate());
 	convertedLine.Append(_T(" "));
 	convertedLine.Append(_T("C") + coordinates.getC_coordinate());
@@ -315,6 +326,9 @@ int ConvertHeidenhain::initialComment() {
 /// @param[index] für testzweck wird später rausgenommen
 void ConvertHeidenhain::filterMovement(CString line, int index, bool isMachMove) {
 	bool isM91 = false;
+	bool xIsFilled = false;
+	bool yIsFilled = false;
+	bool zIsFilled = false;
 	CString convertedLine=_T("");
 	
 	if (isMachMove == false) {
@@ -343,16 +357,28 @@ void ConvertHeidenhain::filterMovement(CString line, int index, bool isMachMove)
 	if (isM91 == false) {
 		for (int i = 0; i < line.GetLength(); i++) {
 			//Refactor fillCoordinates
-			coordinates.setX_coordinate(ConversionAlgorithms::fillCoordinates(line, 'X', i, coordinates.getX_coordinate()));
-			coordinates.setY_coordinate(ConversionAlgorithms::fillCoordinates(line, 'Y', i, coordinates.getY_coordinate()));
-			coordinates.setZ_coordinate(ConversionAlgorithms::fillCoordinates(line, 'Z', i, coordinates.getZ_coordinate()));
-			//findFedRat(line, i, g_fedRat);
+			if (line.GetAt(i) == 'X' && xIsFilled == false) {
+				coordinates.setX_coordinate(ConversionAlgorithms::fillCoordinates(line, 'X', i));
+				coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getX_coordinate()));
+				xIsFilled = true;
+			}
+			if (line.GetAt(i) == 'Y'&& yIsFilled == false) {
+				coordinates.setY_coordinate(ConversionAlgorithms::fillCoordinates(line, 'Y', i));
+				coordinates.setY_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getY_coordinate()));
+				yIsFilled = true;
+			}
+			if (line.GetAt(i) == 'Z' && zIsFilled == false) {
+				coordinates.setZ_coordinate(ConversionAlgorithms::fillCoordinates(line, 'Z', i));
+				coordinates.setZ_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getZ_coordinate()));
+				zIsFilled = true;
+				break;
+			}
 		}
 
-		coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getX_coordinate()));
+		/*coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getX_coordinate()));
 		coordinates.setY_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getY_coordinate()));
 		coordinates.setZ_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getZ_coordinate()));
-
+		*/
 		convertedLine.Append(_T(" X") + coordinates.getX_coordinate());
 		convertedLine.Append(_T(" "));
 		convertedLine.Append(_T("Y") + coordinates.getY_coordinate());
@@ -447,16 +473,30 @@ void ConvertHeidenhain::filterToolName(CString toolNameComment) {
 /// @param [lineCC] die erste Zeile im MCD
 /// @param [lineC] die zweite Zeile aus dem MCD
 void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
+	bool xIsFilled = false;
+	bool yIsFilled = false;
 	CString newX = _T("");
 	CString newY = _T("");
 	for (int i = 0; i < lineCC.GetLength(); i++) {
 		//Refactor fillCoordinate
-	newX= ConversionAlgorithms::fillCoordinates(lineCC, 'X', i, coordinates.getX_coordinate());
-	newY= ConversionAlgorithms::fillCoordinates(lineCC, 'Y', i, coordinates.getY_coordinate());
+		if (lineCC.GetAt(i) == 'X' && xIsFilled == false) {
+			newX = ConversionAlgorithms::fillCoordinates(lineCC, 'X', i);
+			coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(newX));
+			coordinates.setCx(coordinates.getX_coordinate());
+			xIsFilled = true;
+		}
+		if (lineCC.GetAt(i) == 'Y' && yIsFilled == false) {
+			newY = ConversionAlgorithms::fillCoordinates(lineCC, 'Y', i);
+			coordinates.setY_coordinate(ConversionAlgorithms::addDecimalPlace(newY));
+			coordinates.setCy(coordinates.getY_coordinate());
+			yIsFilled = true;
+			break;
+		}
 	}
-
+	/*
 	coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(newX));
 	coordinates.setY_coordinate(ConversionAlgorithms::addDecimalPlace(newY));
+	*/
 
 	double ccX = _wtof(coordinates.getX_coordinate());
 	double ccY = _wtof(coordinates.getY_coordinate());
@@ -465,23 +505,37 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	CString CClineY = coordinates.getY_coordinate();
 	CString gotoLine = _T("");
 	
-	coordinates.setCx(newX);
+	/*coordinates.setCx(newX);
 	coordinates.setCy(newY);
+	*/
 	coordinates.setCz(coordinates.getZ_coordinate());
 	
 	newX = _T("");
 	newY = _T("");
-	
+	yIsFilled = false;
+	xIsFilled = false;
 	for (int i = 0; i < lineC.GetLength(); i++) {
 		//Refactor fillCoordinate
-		newX= ConversionAlgorithms::fillCoordinates(lineC, 'X', i, coordinates.getX_coordinate());
-		newY= ConversionAlgorithms::fillCoordinates(lineC, 'Y', i, coordinates.getY_coordinate());
+		if (lineC.GetAt(i) == 'X' && xIsFilled == false) {
+			newX = ConversionAlgorithms::fillCoordinates(lineC, 'X', i);
+			coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(newX));
+			//coordinates.setCx(coordinates.getX_coordinate());
+			xIsFilled = true;
+		}
+		if (lineC.GetAt(i) == 'Y' && yIsFilled == false) {
+			newY = ConversionAlgorithms::fillCoordinates(lineC, 'Y', i);
+			coordinates.setY_coordinate(ConversionAlgorithms::addDecimalPlace(newY));
+			//coordinates.setCy(coordinates.getY_coordinate());
+			yIsFilled = true;
+			break;
+		}
 	}
-	coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(newX));
+	/*coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(newX));
 	coordinates.setY_coordinate(ConversionAlgorithms::addDecimalPlace(newY));
-
+	*/
 	double cX = _wtof(coordinates.getX_coordinate());
 	double cY = _wtof(coordinates.getY_coordinate());
+
 	CString ClineX = coordinates.getX_coordinate();
 	CString ClineY = coordinates.getX_coordinate();
 
@@ -509,10 +563,10 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	convertedLineOne = _T("MW_RELMOVE FEED  X") + CClineX + _T(" Y") + CClineY + _T(" ") +feedRate +_T(" MOVE=")+lineNr+ _T("#")+lineCC;
 	lineNr = ConversionAlgorithms::findLineNr(lineC);
 	lineC = ConversionAlgorithms::cutAtSpace(lineC, 1);
-	convertedLineTwo = _T("MW_RELARCMOVE FEED  X")+ ClineX + _T(" Y") + ClineY + _T(" CX")+coordinates.getCx()+_T(" CY")+ coordinates.getCy() + _T(" CZ")+ coordinates.getCz() + _T(" ")
-		+ ni_nj_nk + feedRate + _T(" MOVE=") + lineNr + _T("#") + lineC;
+	convertedLineTwo = _T("MW_RELARCMOVE FEED  X")+ coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + coordinates.getZ_coordinate() + _T(" CX") + coordinates.getCx() + _T(" CY") + coordinates.getCy() + _T(" CZ") + coordinates.getCz() + _T(" ")
+	 + ni_nj_nk + _T("A+0.") + feedRate + _T(" MOVE=") + lineNr + _T("#") + lineC;
 
-	moveLines.Add(convertedLineOne);
+	//moveLines.Add(convertedLineOne);
 	moveLines.Add(convertedLineTwo);
 }
 

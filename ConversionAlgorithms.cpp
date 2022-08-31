@@ -303,8 +303,9 @@ CString ConversionAlgorithms::fillMatrix(CString line, CString axis, char axisCh
 /// Die Methode sucht im String nach dem gesuchten Zeichen und befüllt die Koordinatenvariable neu.
 /// </summary>
 /// @param [line] enthält die übergebene Zeile der .tap Datei welche im fileContent Array gespeichert sind
-CString ConversionAlgorithms::fillCoordinates(CString line, char c, int index, CString g_coordinate)
+CString ConversionAlgorithms::fillCoordinates(CString line, char c, int index)
 {
+	CString g_coordinate = _T("");
 	if (line.GetAt(index) == c && (line.GetAt(index + 1) == '+' || line.GetAt(index + 1) == '-')) {
 		g_coordinate = _T("");
 		for (int j = index + 1; j < line.GetLength(); j++) {
