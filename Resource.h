@@ -15,6 +15,7 @@
 #define IDC_COMBO_FILE_PATH             1006
 #define IDC_BUTTON1                     1007
 #define IDC_BUTTON_SAVE                 1007
+#define IDC_PROGRESS                    1008
 
 // Next default values for new objects
 // 
@@ -22,7 +23,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        130
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1008
+#define _APS_NEXT_CONTROL_VALUE         1011
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

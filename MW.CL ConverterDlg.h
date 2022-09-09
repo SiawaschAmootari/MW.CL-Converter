@@ -32,8 +32,8 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
-	CEdit m_EDIT_FILE_INPUT;
-	CEdit m_EDIT_FILE_OUTPUT;
+	//CEdit m_EDIT_FILE_INPUT;
+	//CEdit m_EDIT_FILE_OUTPUT;
 	CListBox m_LIST_MESSAGES;
 	CStringArray m_sFilecontent;
 	CStringArray m_sFileConverted;
@@ -47,7 +47,12 @@ public:
 	//ConvertHeidenhain convert;
 
 	afx_msg void OnBnClickedButtonOpen();
-	CComboBox m_COMBO_FILE_PATH;
 	afx_msg void OnBnClickedButtonConvert();
 	afx_msg void OnBnClickedButtonSave();
+	void quickOpen();
+	void quickConvert();
+	void quickSave();
+	CProgressCtrl progress;
+	
 };
+

@@ -33,21 +33,19 @@ ConvertHeidenhain::ConvertHeidenhain() {}
 /// @param [fileContent] der Übergebene CStringArray der alle Zeilen der .tap File beinhaltet.
 /// @param [labelIndex] enthält den Array index ab dem die LBLs anfangen
 /// @param [filePath] enthält den Dateipfad der geöffneten Datei
-void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelIndex  ,CString filePath)
+void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelIndex  ,CString &filePath)
 {
-	
-	readConfigFile();
 	label_index = labelIndex;
 	path = filePath;
-
+	readConfigFile(path);
 	CString tool_repositoryName=_T("tool_repository.cl");
 	CString creoConfiName = _T("creo2mw.ini");
 	CString tool_repositoryPath = ConversionAlgorithms::findSubFilesPath(tool_repositoryName,path);
 	CString creoConfiPath = ConversionAlgorithms::findSubFilesPath(creoConfiName,path);
 	CString indexString;
 	CString testString;
-	openSubFiles(tool_repositoryPath ,tool_repositoryContent);
-	openSubFiles(creoConfiPath,creoConfiContent);
+	openSubFiles(_T("C:\\ESCmachine\\mwMachineSimulator_SimulationFiles\\tool_repository.cl"), tool_repositoryContent);
+	openSubFiles(_T("C:\\ESCmachine\\mwMachineSimulator_SimulationFiles\\creo2mw.ini"), creoConfiContent);
 	file.Copy(fileContent);
 	bool foundOpCycle = false;
 	int indexOfFirstToolCall = initialComment();
@@ -93,8 +91,8 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 				indexString.Format(_T("%d"), op_number_index);
 				mw_op_number_list.Add(mw_op_number + _T(" ") + indexString);
 				indexString = _T("");
-				//findSequenceName(fileContent.GetAt(i));
 				startMachineCycle(_T("try catch"));
+				i++;
 			}
 		}
 		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength() - 1) != '-') {
@@ -110,9 +108,9 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			indexString = _T("");
 			if (foundOpCycle == true) {
 				startMachineCycle(_T("hello"));
-				
 			}
 			foundOpCycle = true;
+
 		}
 		else if (fileContent.GetAt(i).Find(_T("CC")) != -1) {
 			findCircle(fileContent.GetAt(i), fileContent.GetAt(i+1));
@@ -135,7 +133,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 /// </summary>
 /// <param name="indexString"></param>
 void ConvertHeidenhain::startMachineCycle(CString indexString) {
-	
+
 	if (indexString.Find(_T("try catch")) == -1) {
 		convertedFileContent.Add(mw_op_start);
 		convertedFileContent.Add(mw_op_number_list.GetAt(mw_list_counter));
@@ -144,7 +142,7 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 		convertedFileContent.Add(configFile.getPostconfig());
 		convertedFileContent.Add(configFile.getOutputname());
 		convertedFileContent.Add(mw_tool_name_list.GetAt(toolListCounter));
-		CString mapKey = ConversionAlgorithms::cutAtSpace(mw_tool_name_list.GetAt(toolListCounter),3);
+		CString mapKey = ConversionAlgorithms::cutAtSpace(mw_tool_name_list.GetAt(toolListCounter), 3);
 		convertedFileContent.Add(toolRepositoryMap.at(mapKey));
 		convertedFileContent.Add(mw_transform);
 		convertedFileContent.Add(mw_toolpath_transform);
@@ -174,12 +172,12 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 	if (indexString.Find(_T("try catch")) == -1) {
 		convertedFileContent.Add(configFile.getToolChangeTime());
 	}
-	
+
 	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
 	if (configFile.getMw_toolCall().GetLength() > 1) {
 		convertedFileContent.Add(configFile.getMw_toolCall());
 	}
-	for (int i = 0; i < moveLines.GetSize()-1 ; i++) {
+	for (int i = 0; i < moveLines.GetSize() - 1; i++) {
 		convertedFileContent.Add(moveLines.GetAt(i));
 	}
 	configFile.setMw_toolCall(moveLines.GetAt(moveLines.GetSize() - 1));
@@ -275,7 +273,7 @@ int ConvertHeidenhain::initialComment() {
 		else if (file.GetAt(i).Find(_T("L X")) != -1 || file.GetAt(i).Find(_T("L Y")) != -1 || file.GetAt(i).Find(_T("L Z")) != -1 ||
 			file.GetAt(i).Find(_T("L  X")) != -1 || file.GetAt(i).Find(_T("L  Y")) != -1 || file.GetAt(i).Find(_T("L  Z")) != -1) {
 			filterMovement(file.GetAt(i), i, false);
-		}
+		} 
 		else if (file.GetAt(i).Find(_T("* -")) != -1 && file.GetAt(i).GetAt(file.GetAt(i).GetLength() - 1) == '-') {
 			indexOfFirstToolCall = i;
 			break;
@@ -283,6 +281,7 @@ int ConvertHeidenhain::initialComment() {
 		else if (file.GetAt(i).Find(_T("FN")) != -1) {
 			moveLines.Add(SearchAlgorithms::findOtherLine(file.GetAt(i),mw_other_line));
 			feedRate = SearchAlgorithms::findFeedRate(file.GetAt(i));
+			
 		}
 		else if (file.GetAt(i).Find(_T("CC")) != -1) {
 			findCircle(file.GetAt(i), file.GetAt(i + 1));
@@ -689,9 +688,9 @@ void ConvertHeidenhain::filterCycleDef(CString lineX,CString lineY,CString lineZ
 /// <summary>
 /// Liest die config.txt Datei und Speichert alle Informationen in die unten angezeigten Variablen ein.
 /// </summary>
-void ConvertHeidenhain::readConfigFile() {
+void ConvertHeidenhain::readConfigFile(CString path) {
 	CString configPath = ConversionAlgorithms::findSubFilesPath(_T("config.txt"),path);
-	openSubFiles(configPath, configFile.configFileList);
+	openSubFiles(_T("C:\\ESCmachine\\mwMachineSimulator_Machines\\HERMLE_C32U_AC_cfg.txt"), configFile.configFileList);
 	configFile.setVersion(ConversionAlgorithms::cutAtSpace(configFile.configFileList.GetAt(0),1));
 	configFile.setUnit(ConversionAlgorithms::cutAtSpace(configFile.configFileList.GetAt(1), 1));
 	configFile.setInitial(ConversionAlgorithms::cutAtSpace(configFile.configFileList.GetAt(2), 1));

@@ -28,14 +28,15 @@ public:
 	
 	
 	//Methods without return value
-	void readConfigFile();
-	void startConverting(CStringArray& fileContent, int& labelIndex, CString filePath);
+	void readConfigFile(CString path);
+	void startConverting(CStringArray& fileContent, int& labelIndex, CString &filePath);
 	void filterMovement(CString line, int index, bool isMachMove);
 	void findToolCall(CString line);
 	void openSubFiles(CString path, CStringArray& subFileContent);
 	void filterToolName(CString toolNameComment);
 	void startMachineCycle(CString line, bool& foundOpCycle, CString indexString);
 	void startMachineCycle(CString indexString);
+	void startMachineCycle();
 	void findCircle(CString lineCC, CString lineC);
 	void jumpToLabel(CString line);
 	void textFilter(CString line, int& index);

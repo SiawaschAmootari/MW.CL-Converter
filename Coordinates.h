@@ -4,6 +4,7 @@ class Coordinates
 public:
 
 	Coordinates();
+
 	//Getter
 	CString getX_coordinate();
 	CString getY_coordinate();
