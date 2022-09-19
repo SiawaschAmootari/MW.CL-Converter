@@ -84,21 +84,25 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		}
 		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength()-1) =='-') {
 			
+			CString line = fileContent.GetAt(i);
 			sequenceWithoutToolChange(fileContent.GetAt(i));
-			if (SearchAlgorithms::searchForToolChange(i,file) == false) {
+			if (SearchAlgorithms::searchForToolChange(i, file) == false) {
 				CString testString = fileContent.GetAt(i);
 				op_number_index++;
 				indexString.Format(_T("%d"), op_number_index);
 				mw_op_number_list.Add(mw_op_number + _T(" ") + indexString);
 				indexString = _T("");
 				startMachineCycle(_T("try catch"));
-				i++;
+				
 			}
 		}
 		else if (fileContent.GetAt(i).Find(_T("* -")) != -1 && fileContent.GetAt(i).GetAt(fileContent.GetAt(i).GetLength() - 1) != '-') {
-			//comment ignore line
+			
 		}
 		else if (fileContent.GetAt(i).Find(_T("TOOL CALL")) != -1) {
+			if (foundOpCycle == true) {
+			startMachineCycle(_T("hello"));
+			}
 			CString testString = fileContent.GetAt(i);
 			findToolCall(fileContent.GetAt(i));
 			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i),mw_other_line));
@@ -106,11 +110,8 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			indexString.Format(_T("%d"), op_number_index);
 			mw_op_number_list.Add(mw_op_number + _T(" ") + indexString);
 			indexString = _T("");
-			if (foundOpCycle == true) {
-				startMachineCycle(_T("hello"));
-			}
 			foundOpCycle = true;
-
+			
 		}
 		else if (fileContent.GetAt(i).Find(_T("CC")) != -1) {
 			findCircle(fileContent.GetAt(i), fileContent.GetAt(i+1));
@@ -142,7 +143,7 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 		convertedFileContent.Add(configFile.getPostconfig());
 		convertedFileContent.Add(configFile.getOutputname());
 		convertedFileContent.Add(mw_tool_name_list.GetAt(toolListCounter));
-		CString mapKey = ConversionAlgorithms::cutAtSpace(mw_tool_name_list.GetAt(toolListCounter), 3);
+		mapKey = ConversionAlgorithms::cutAtSpace(mw_tool_name_list.GetAt(toolListCounter), 3);
 		convertedFileContent.Add(toolRepositoryMap.at(mapKey));
 		convertedFileContent.Add(mw_transform);
 		convertedFileContent.Add(mw_toolpath_transform);
@@ -159,7 +160,7 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 		convertedFileContent.Add(configFile.getPostconfig());
 		convertedFileContent.Add(configFile.getOutputname());
 		convertedFileContent.Add(mw_tool_name_list.GetAt(toolListCounter));
-		CString mapKey = ConversionAlgorithms::cutAtSpace(mw_tool_name_list.GetAt(toolListCounter), 3);
+		mapKey = ConversionAlgorithms::cutAtSpace(mw_tool_name_list.GetAt(toolListCounter), 3);
 		convertedFileContent.Add(toolRepositoryMap.at(mapKey));
 		convertedFileContent.Add(mw_transform);
 		convertedFileContent.Add(mw_toolpath_transform);
@@ -175,10 +176,19 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 
 	convertedFileContent.Add(_T("MW_USE_PREVIOUS_OPERATION_AXES_AS_REFERENCE"));
 	if (configFile.getMw_toolCall().GetLength() > 1) {
-		convertedFileContent.Add(configFile.getMw_toolCall());
+		//convertedFileContent.Add(configFile.getMw_toolCall());
 	}
-	for (int i = 0; i < moveLines.GetSize() - 1; i++) {
-		convertedFileContent.Add(moveLines.GetAt(i));
+	if (indexString.Find(_T("try catch")) == -1) {
+		
+		for (int i = 0; i < moveLines.GetSize(); i++) {
+			convertedFileContent.Add(moveLines.GetAt(i));
+		}
+	}
+	else {
+		
+		for (int i = 0; i < moveLines.GetSize(); i++) {
+			convertedFileContent.Add(moveLines.GetAt(i));
+		}
 	}
 	configFile.setMw_toolCall(moveLines.GetAt(moveLines.GetSize() - 1));
 	moveLines.RemoveAll();
@@ -302,13 +312,13 @@ int ConvertHeidenhain::initialComment() {
 			break;
 		}
 		else if (file.GetAt(i).Find(_T("* -")) != -1 || file.GetAt(i).Find(_T("BLK FORM") || file.GetAt(i).Find(_T("BEGIN")) != -1)){
-		//nothing
+		//nothing test the new function  
 		}
 		else {
 			moveLines.Add(SearchAlgorithms::findOtherLine(file.GetAt(i), mw_other_line));
 		}
 	}
-
+	
 	for (int i = 0; i < moveLines.GetSize(); i++) {
 		convertedFileContent.Add(moveLines.GetAt(i));
 	}
@@ -374,10 +384,7 @@ void ConvertHeidenhain::filterMovement(CString line, int index, bool isMachMove)
 			}
 		}
 
-		/*coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getX_coordinate()));
-		coordinates.setY_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getY_coordinate()));
-		coordinates.setZ_coordinate(ConversionAlgorithms::addDecimalPlace(coordinates.getZ_coordinate()));
-		*/
+		
 		convertedLine.Append(_T(" X") + coordinates.getX_coordinate());
 		convertedLine.Append(_T(" "));
 		convertedLine.Append(_T("Y") + coordinates.getY_coordinate());
@@ -492,11 +499,7 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 			break;
 		}
 	}
-	/*
-	coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(newX));
-	coordinates.setY_coordinate(ConversionAlgorithms::addDecimalPlace(newY));
-	*/
-
+	
 	double ccX = _wtof(coordinates.getX_coordinate());
 	double ccY = _wtof(coordinates.getY_coordinate());
 	//Zeile für C
@@ -504,9 +507,6 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 	CString CClineY = coordinates.getY_coordinate();
 	CString gotoLine = _T("");
 	
-	/*coordinates.setCx(newX);
-	coordinates.setCy(newY);
-	*/
 	coordinates.setCz(coordinates.getZ_coordinate());
 	
 	newX = _T("");
@@ -529,16 +529,14 @@ void ConvertHeidenhain::findCircle(CString lineCC, CString lineC) {
 			break;
 		}
 	}
-	/*coordinates.setX_coordinate(ConversionAlgorithms::addDecimalPlace(newX));
-	coordinates.setY_coordinate(ConversionAlgorithms::addDecimalPlace(newY));
-	*/
+	
 	double cX = _wtof(coordinates.getX_coordinate());
 	double cY = _wtof(coordinates.getY_coordinate());
 
 	CString ClineX = coordinates.getX_coordinate();
 	CString ClineY = coordinates.getX_coordinate();
 
-	double result = sqrt(((cX - ccX) * (cX - ccX)) + ((cY - ccY) * (cY - ccY)));//?
+	double result = sqrt(((cX - ccX) * (cX - ccX)) + ((cY - ccY) * (cY - ccY)));
 
 	CString ni_nj_nk = _T("");
 	CString rotationDirection;

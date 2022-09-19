@@ -55,6 +55,7 @@ public:
 	CString feedRate = _T("F");
 	CString spindle = _T("F");
 	CString path;
+	CString mapKey = _T("");
 
 	//bools for algortihms
 	bool foundFMAX = false;
