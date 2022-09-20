@@ -763,5 +763,14 @@ void ConvertHeidenhain::findMatrix(CString line) {
 	else {
 		moveLines.Add(ConversionAlgorithms::calculateMatrix(ra, 0.00, rc,transformation,coordinates));
 		moveLines.Add(_T("MW_MACHMOVE C+180 SUBMOVE"));
+		CString spatial = SearchAlgorithms::findOtherLine(line, mw_other_line);
+		spatial += _T("# MW_MACHMOVE X+20 Y+400 Z+500");
+		CString lineNr = ConversionAlgorithms::findLineNr(line);
+		CString convertedLine = _T("MW_RELMOVE RAPID X+20 Y+400 Z+500  TIME.1");
+		convertedLine.Append(_T(" MOVE="));
+		convertedLine.Append(lineNr);
+		line = ConversionAlgorithms::cutAtSpace(line, 1);
+		moveLines.Add(convertedLine + _T(" #") + line+ _T("# MW_MACHMOVE X+20 Y+400 Z+500"));
+		//moveLines.Add(spatial);
 	}
 }
