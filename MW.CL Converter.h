@@ -21,6 +21,7 @@ public:
 	CMWCLConverterApp();
 	void	ArrToVal(const CStringArray& sValArr, CString& sVal);
 	void	ArrToVal(const CString sDel, const CStringArray& sValArr, CString& sVal);
+	int		ExitInstance();
 // Überschreibungen
 public:
 	virtual BOOL InitInstance();

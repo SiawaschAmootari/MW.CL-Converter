@@ -110,3 +110,14 @@ void	CMWCLConverterApp::ArrToVal(const CString sDel, const CStringArray& sValArr
 	}
 }
 
+int  CMWCLConverterApp::ExitInstance()
+
+{
+
+	//return CWinApp::ExitInstance();
+
+	CWinApp::ExitInstance();
+
+	return m_iReturncode; // der wird im Fehlerfall im Dialog beschrieben, da wir dort dem Bediener eine vernünftige Fehlermeldung zeigen können!
+
+}

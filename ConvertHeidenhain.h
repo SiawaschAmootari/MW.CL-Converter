@@ -61,6 +61,7 @@ public:
 	bool foundFMAX = false;
 	bool foundFQ = false;
 	bool foundRTCPOFF = false;
+	bool labelZero = false;
 
 	//Hardcoded Strings
 	CString mw_machmove_rapid = _T("MW_MACHMOVE RAPID   MOVE=");

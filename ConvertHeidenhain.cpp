@@ -56,6 +56,11 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i), mw_other_line));
 			foundRTCPOFF = true;
 		}
+		else if (fileContent.GetAt(i).Find(_T("M140")) != -1) {
+			CString test = SearchAlgorithms::findOtherLine(fileContent.GetAt(i),_T("MW_MACHMOVE RAPID  TIME.1 Z+500 MOVE="));
+			
+			moveLines.Add(test);
+		}
 		else if (fileContent.GetAt(i).Find(_T("M05")) != -1) {
 			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i),mw_other_line));
 			moveLines.Add(configFile.getToolChangePoint_z());
@@ -407,6 +412,11 @@ void ConvertHeidenhain::filterMovement(CString line, int index, bool isMachMove)
 		if (line.Find(_T("M3")) != -1) {
 			line.Append(_T(" # MW_MACHMOVE Z+500.000"));
 		}
+		if (labelZero == true) {
+			line.Append(_T(" # MW_MACHMOVE Z+500.000"));
+			labelZero = false;
+		}
+
 		moveLines.Add(convertedLine + _T(" #") + line);
 }
 
@@ -757,12 +767,22 @@ void ConvertHeidenhain::findMatrix(CString line) {
 	double ra = _wtof(coordinates.getA_matrix());
 	double rc = _wtof(coordinates.getC_matrix());
 
+	
+
+	CString spc = ConversionAlgorithms::cutAtSpace(line, 5,' ');
+
+	CString submove = _T("");
+
+	for (int i = 3; i < spc.GetLength(); i++) {
+		submove.AppendChar(spc.GetAt(i));
+	}
+
 	if (ra == 0 && rc == 0) {
 		moveLines.Add(SearchAlgorithms::findOtherLine(line, mw_other_line));
 	}
 	else {
 		moveLines.Add(ConversionAlgorithms::calculateMatrix(ra, 0.00, rc,transformation,coordinates));
-		moveLines.Add(_T("MW_MACHMOVE C+180 SUBMOVE"));
+		moveLines.Add(_T("MW_MACHMOVE C")+submove+_T(" SUBMOVE"));
 		CString spatial = SearchAlgorithms::findOtherLine(line, mw_other_line);
 		spatial += _T("# MW_MACHMOVE X+20 Y+400 Z+500");
 		CString lineNr = ConversionAlgorithms::findLineNr(line);
@@ -771,6 +791,7 @@ void ConvertHeidenhain::findMatrix(CString line) {
 		convertedLine.Append(lineNr);
 		line = ConversionAlgorithms::cutAtSpace(line, 1);
 		moveLines.Add(convertedLine + _T(" #") + line+ _T("# MW_MACHMOVE X+20 Y+400 Z+500"));
-		//moveLines.Add(spatial);
+		labelZero = true;
+
 	}
 }
