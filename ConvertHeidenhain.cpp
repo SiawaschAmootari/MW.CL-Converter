@@ -56,6 +56,11 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i), mw_other_line));
 			foundRTCPOFF = true;
 		}
+		else if (fileContent.GetAt(i).Find(_T("CYCL DEF 200")) != -1) {
+			drill.fillDrill(fileContent.GetAt(i + 1), fileContent.GetAt(i+2), fileContent.GetAt(i+3), fileContent.GetAt(i+4), fileContent.GetAt(i+5), fileContent.GetAt(i+6), fileContent.GetAt(i+7), fileContent.GetAt(i+8));
+
+			//
+		}
 		else if (fileContent.GetAt(i).Find(_T("M140")) != -1) {
 			CString test = SearchAlgorithms::findOtherLine(fileContent.GetAt(i),_T("MW_MACHMOVE RAPID  TIME.1 Z+500 MOVE="));
 			

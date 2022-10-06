@@ -6,6 +6,7 @@
 #include "Transformation.h"
 #include "ConfigFile.h"
 #include "ConversionAlgorithms.h"
+#include "Drill.h"
 using namespace std;
 
 class ConvertHeidenhain : public CMWCLConverterDlg
@@ -16,6 +17,7 @@ public:
 	Coordinates coordinates;
 	Transformation transformation;
 	ConfigFile configFile;
+	Drill drill;
 
 	//Variables
 	CStringArray fileContent;

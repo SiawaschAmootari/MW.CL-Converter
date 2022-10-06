@@ -22,6 +22,7 @@ public:
 	void	ArrToVal(const CStringArray& sValArr, CString& sVal);
 	void	ArrToVal(const CString sDel, const CStringArray& sValArr, CString& sVal);
 	int		ExitInstance();
+	int m_iReturncode;
 // Überschreibungen
 public:
 	virtual BOOL InitInstance();

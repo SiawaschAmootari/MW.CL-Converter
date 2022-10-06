@@ -121,3 +121,35 @@ int  CMWCLConverterApp::ExitInstance()
 	return m_iReturncode; // der wird im Fehlerfall im Dialog beschrieben, da wir dort dem Bediener eine vernünftige Fehlermeldung zeigen können!
 
 }
+
+enum class eErrorCode
+
+{
+
+	TIME_CODE = 1,
+
+	INVALID_USER, // 1
+
+	NO_CMD_LINE, // 2
+
+	BAD_CMD_LINE, // 3
+
+	NO_DEF_FIL, // 4
+
+	BAD_DEF_FIL, // 5
+
+	NO_CFG_FIL, // 6
+
+	BAD_CFG_FIL, // 7
+
+	LICENSE_TIME_CODE, // 8
+
+	NO_INP_FIL, // 9
+
+	BAD_INP_FIL, // 10
+
+	NO_OUTP_FIL, // 11
+
+	OTHER                       // 12
+
+};
