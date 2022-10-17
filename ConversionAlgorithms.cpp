@@ -138,7 +138,10 @@ CString ConversionAlgorithms::addTwoStrings(CString numberOne, CString numberTwo
 	double result = numberOneAsDouble + numberTwoAsDouble;
 	CString resultAsString;
 	resultAsString.Format(_T("%lf"), result);
-
+	
+	if (resultAsString.GetAt(0) != '-') {
+		return _T("+") + resultAsString;
+	}
 	return resultAsString;
 }
 
