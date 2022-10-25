@@ -197,6 +197,7 @@
     <ClInclude Include="SearchAlgorithms.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Transformation.h" />
+    <ClInclude Include="UniversalDrill.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ConfigFile.cpp" />
@@ -215,6 +216,7 @@
     </ClCompile>
     <ClCompile Include="SearchAlgorithms.cpp" />
     <ClCompile Include="Transformation.cpp" />
+    <ClCompile Include="UniversalDrill.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MWCLConverter.rc" />

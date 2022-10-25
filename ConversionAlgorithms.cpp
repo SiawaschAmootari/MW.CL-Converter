@@ -145,6 +145,39 @@ CString ConversionAlgorithms::addTwoStrings(CString numberOne, CString numberTwo
 	return resultAsString;
 }
 
+CString ConversionAlgorithms::substractTwoStrings(CString numberOne, CString numberTwo)
+{
+	double numberOneAsDouble = _wtof(numberOne);
+	double numberTwoAsDouble = _wtof(numberTwo);
+	double result = numberOneAsDouble - numberTwoAsDouble;
+	CString resultAsString;
+	resultAsString.Format(_T("%lf"), result);
+
+	if (resultAsString.GetAt(0) != '-') {
+		return _T("+") + resultAsString;
+	}
+	return resultAsString;
+}
+
+CString ConversionAlgorithms::divideTwoStrings(CString numberOne, CString numberTwo)
+{
+	double numberOneAsDouble = _wtof(numberOne);
+	double numberTwoAsDouble = _wtof(numberTwo);
+	double result = numberOneAsDouble / numberTwoAsDouble;
+	int check = int(result);
+	
+	if (result-check!=0) {
+		result = check + 1;
+	}
+	CString resultAsString;
+	resultAsString.Format(_T("%lf"), result);
+
+	if (resultAsString.GetAt(0) != '-') {
+		return _T("+") + resultAsString;
+	}
+	return resultAsString;
+}
+
 CString ConversionAlgorithms::calculateMatrix(double a, double b, double c,Transformation transformation, Coordinates coordinates)
 {
 	double determinant = 0;

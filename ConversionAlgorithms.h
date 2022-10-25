@@ -14,5 +14,8 @@ public:
 	static CString fillCoordinates(CString line, char c, int index);
 	static CString addDecimalPlace(CString line);
 	static CString findLineNr(CString line);
+	static CString substractTwoStrings(CString numberOne, CString numberTwo);
+	static CString divideTwoStrings(CString numberOne, CString numberTwo);
+
 };
 

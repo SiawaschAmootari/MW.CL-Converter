@@ -7,6 +7,7 @@
 #include "ConfigFile.h"
 #include "ConversionAlgorithms.h"
 #include "Drill.h"
+#include "UniversalDrill.h"
 using namespace std;
 
 class ConvertHeidenhain : public CMWCLConverterDlg
@@ -18,6 +19,7 @@ public:
 	Transformation transformation;
 	ConfigFile configFile;
 	Drill drill;
+	UniversalDrill universalDrill;
 
 	//Variables
 	CStringArray fileContent;
