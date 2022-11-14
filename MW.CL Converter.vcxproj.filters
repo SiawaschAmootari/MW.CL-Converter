@@ -60,6 +60,9 @@
     <ClInclude Include="UniversalDrill.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Tapping.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MW.CL Converter.cpp">
@@ -96,6 +99,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UniversalDrill.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tapping.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

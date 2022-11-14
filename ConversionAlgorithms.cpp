@@ -159,6 +159,18 @@ CString ConversionAlgorithms::substractTwoStrings(CString numberOne, CString num
 	return resultAsString;
 }
 
+double ConversionAlgorithms::substractTwoStringsReturnDouble(CString numberOne, CString numberTwo)
+{
+	double numberOneAsDouble = _wtof(numberOne);
+	double numberTwoAsDouble = _wtof(numberTwo);
+	double result = numberOneAsDouble - numberTwoAsDouble;
+	CString resultAsString;
+	resultAsString.Format(_T("%lf"), result);
+
+	
+	return result;
+}
+
 CString ConversionAlgorithms::divideTwoStrings(CString numberOne, CString numberTwo)
 {
 	double numberOneAsDouble = _wtof(numberOne);

@@ -16,6 +16,7 @@ public:
 	static CString findLineNr(CString line);
 	static CString substractTwoStrings(CString numberOne, CString numberTwo);
 	static CString divideTwoStrings(CString numberOne, CString numberTwo);
+	static double substractTwoStringsReturnDouble(CString numberOne, CString numberTwo);
 
 };
 

@@ -57,7 +57,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			foundRTCPOFF = true;
 		}
 		else if (fileContent.GetAt(i).Find(_T("CYCL DEF 203")) != -1) {
-			bool overflow = false;
+			numberOfLastCycleDef = 203;
 			universalDrill.fillDrill(fileContent.GetAt(i + 1), fileContent.GetAt(i + 2), fileContent.GetAt(i + 3), fileContent.GetAt(i + 4), fileContent.GetAt(i + 5),
 				fileContent.GetAt(i + 6), fileContent.GetAt(i + 7), fileContent.GetAt(i + 8), fileContent.GetAt(i + 9), fileContent.GetAt(i + 10), fileContent.GetAt(i + 11), fileContent.GetAt(i + 12), fileContent.GetAt(i + 13));
 
@@ -76,45 +76,9 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i + 12), mw_other_line));
 			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i + 13), mw_other_line));
 
-			CString lineOne = ConversionAlgorithms::addTwoStrings(universalDrill.q200,universalDrill.q203);
-			moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineOne + _T(" F30000 SUBMOVE# "));
-			
-			CString lineTwo = ConversionAlgorithms::substractTwoStrings(universalDrill.q203, universalDrill.q202);
-			moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineTwo + _T(" F300. SUBMOVE# "));
-
-			CString anzSpanAsString = ConversionAlgorithms::addTwoStrings(universalDrill.q213,_T("0.0"));
-			double anzSpanAsDouble = _wtof(anzSpanAsString);
-			int anzSpanAsInt = (int)anzSpanAsDouble;
-
-			double numberOneAsDouble = _wtof(ConversionAlgorithms::divideTwoStrings(universalDrill.q201, universalDrill.q202));
-			double numberTwoAsDouble = _wtof(universalDrill.q201) / _wtof(universalDrill.q202);
-
-			if ((numberOneAsDouble * -1) < (numberTwoAsDouble * -1)) {
-				overflow = true;
-			}
-			CString valueTwo = lineTwo;
-			int countAnzSpan = 0;
-			for (int i = 0; i < int(numberTwoAsDouble*-1); i++) {
-
-				countAnzSpan++;
-				if (countAnzSpan == anzSpanAsInt) {
-					moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineOne + _T(" F30000 SUBMOVE# "));
-					moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::substractTwoStrings(valueTwo, _T("-0.01")) + _T(" F30000 SUBMOVE# "));
-					countAnzSpan = 0;
-				}
-				else {
-					moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(valueTwo, universalDrill.q256) + _T(" F300. SUBMOVE# "));
-				}
-				if (overflow == true && i == int(numberTwoAsDouble * -1) - 1) {
-					moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(universalDrill.q201, universalDrill.q203) + _T(" F300. SUBMOVE# "));
-				}
-				else {
-					moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::substractTwoStrings(valueTwo, universalDrill.q202) + _T(" F300. SUBMOVE# "));
-				}
-				valueTwo = ConversionAlgorithms::substractTwoStrings(valueTwo, universalDrill.q202);
-			}
 		}
 		else if (fileContent.GetAt(i).Find(_T("CYCL DEF 200")) != -1) {
+			numberOfLastCycleDef = 200;
 			drill.fillDrill(fileContent.GetAt(i + 1), fileContent.GetAt(i+2), fileContent.GetAt(i+3), fileContent.GetAt(i+4), fileContent.GetAt(i+5), 
 				fileContent.GetAt(i+6), fileContent.GetAt(i+7), fileContent.GetAt(i+8));
 			
@@ -128,56 +92,32 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i + 7), mw_other_line));
 			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i + 8), mw_other_line));
 
-			if (drill.q201.Compare(drill.q202)==0) {
-				//RELMOVES
-				CString lineOne = ConversionAlgorithms::addTwoStrings(drill.q200, drill.q203);
-				moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineOne + _T(" F30000 SUBMOVE# "));
-
-				CString lineTwo = ConversionAlgorithms::addTwoStrings(drill.q201, drill.q203);
-				moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineTwo + _T(" F300. SUBMOVE# "));
-
-				CString lineThree = ConversionAlgorithms::addTwoStrings(drill.q204, drill.q203);
-				moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineThree + _T(" F30000 SUBMOVE# "));
-			}
-			else {
-				bool overflow = false;
-				CString lineOne = ConversionAlgorithms::addTwoStrings(drill.q200, drill.q203);
-				moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineOne + _T(" F30000 SUBMOVE# "));
-
-				CString lineTwo = ConversionAlgorithms::substractTwoStrings(drill.q203, drill.q202);
-				moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineTwo + _T(" F300. SUBMOVE# "));
-
-				double numberOneAsDouble = _wtof(ConversionAlgorithms::divideTwoStrings(drill.q201, drill.q202));
-				double numberTwoAsDouble = _wtof(drill.q201) / _wtof(drill.q202);
-				if ((numberOneAsDouble*-1)<(numberTwoAsDouble*-1)) {
-					overflow = true;
-				}
-				CString valueQ200 = drill.q201;
-				CString valueQ203 = drill.q203;
-				CString value = lineTwo;
-
-
-
-				for (int i = 0; i < int(numberTwoAsDouble*-1); i++) {
-
-					moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(drill.q200, drill.q203) + _T(" F300. SUBMOVE# "));
-					moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(value, drill.q200) + _T(" F300. SUBMOVE# "));
-		
-					if (overflow == true && i == int(numberTwoAsDouble * -1)-1) {
-						moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(drill.q201, drill.q203) + _T(" F300. SUBMOVE# "));
-					}
-					else {
-						moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::substractTwoStrings(value, drill.q202) + _T(" F300. SUBMOVE# "));
-					}
-					value = ConversionAlgorithms::substractTwoStrings(value, drill.q202);
-				}
-				moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(drill.q204, drill.q203) + _T(" F300. SUBMOVE# "));
-				
-
-
-
-			}
+		}
+		else if (fileContent.GetAt(i).Find(_T("CYCL DEF 207")) != -1) {
+			numberOfLastCycleDef = 207;
 			
+			tapping.fillDrill(fileContent.GetAt(i + 1), fileContent.GetAt(i + 2), fileContent.GetAt(i + 3), fileContent.GetAt(i + 4), fileContent.GetAt(i + 5));
+
+			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i), mw_other_line));
+			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i + 1), mw_other_line));
+			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i + 2), mw_other_line));
+			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i + 3), mw_other_line));
+			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i + 4), mw_other_line));
+			moveLines.Add(SearchAlgorithms::findOtherLine(fileContent.GetAt(i + 5), mw_other_line));
+
+		}
+		else if (fileContent.GetAt(i).Find(_T("M99")) != -1) {
+
+			filterMovement(fileContent.GetAt(i), i, false);
+			if (numberOfLastCycleDef == 200) {
+				cycleDef200();
+			}
+			else if (numberOfLastCycleDef == 203) {
+				cycleDef203();
+			}
+			else if (numberOfLastCycleDef == 207) {
+				cycleDef207();
+			}
 		}
 		else if (fileContent.GetAt(i).Find(_T("M140")) != -1) {
 			CString test = SearchAlgorithms::findOtherLine(fileContent.GetAt(i),_T("MW_MACHMOVE RAPID  TIME.1 Z+500 MOVE="));
@@ -201,7 +141,7 @@ void ConvertHeidenhain::startConverting(CStringArray& fileContent,int &labelInde
 		}
 		else if (fileContent.GetAt(i).Find(_T(";")) != -1) {
 			//ignore line
-		}
+		} 
 		else if (fileContent.GetAt(i).Find(_T("L X")) != -1 || fileContent.GetAt(i).Find(_T("L Y")) != -1 || fileContent.GetAt(i).Find(_T("L Z")) != -1||
 			fileContent.GetAt(i).Find(_T("L  X")) != -1 || fileContent.GetAt(i).Find(_T("L  Y")) != -1 || fileContent.GetAt(i).Find(_T("L  Z")) != -1) {
 			filterMovement(fileContent.GetAt(i),i,false);
@@ -323,13 +263,15 @@ void ConvertHeidenhain::startMachineCycle(CString indexString) {
 	mw_list_counter++;
 }
 
+
+//test 
 void ConvertHeidenhain::sequenceWithoutToolChange(CString line) {
 	CString sequenceNamewotc = _T("MW_OP_COMMENT ");
 	CString cuttedLine = ConversionAlgorithms::cutAtSpace(line, 3, ' ');
 	CString sequenceName = _T("");
 	
 	sequenceName.AppendChar(_T('"'));
-	sequenceName.Append(cuttedLine);
+	sequenceName.Append(cuttedLine);	
 	sequenceName.AppendChar(_T('"'));
 
 	sequenceNamewotc.Append(sequenceName);
@@ -337,13 +279,16 @@ void ConvertHeidenhain::sequenceWithoutToolChange(CString line) {
 }
 
 void ConvertHeidenhain::fillacCoordinates(CString line) {
+
 	bool aIsFilled = false;
 	bool cIsFilled = false;
 	CString newA=_T("");
 	CString newC=_T("");
 	CString convertedLine = _T("MW_MACHMOVE RAPID");
-	for (int i = 0; i < line.GetLength()-1; i++) {
-		
+	for (int i = 0; i < line.GetLength() - 1; i++) {
+		if (line.GetAt(i) == ';') {
+			break;
+		}
 		if (line.GetAt(i) == 'A'&& (line.GetAt(i+1) == '+'|| line.GetAt(i + 1) == '-') && aIsFilled == false) {
 			newA = ConversionAlgorithms::fillCoordinates(line, 'A', i);
 			coordinates.setA_coordinate(ConversionAlgorithms::addDecimalPlace(newA));
@@ -531,10 +476,10 @@ void ConvertHeidenhain::filterMovement(CString line, int index, bool isMachMove)
 		convertedLine.Append(_T(" MOVE="));
 		convertedLine.Append(lineNr);
 		line = ConversionAlgorithms::cutAtSpace(line, 1);
-		if (line.Find(_T("M3")) != -1) {
+		if (line.Find(_T("M3")) != -1 && labelZero == false) {
 			line.Append(_T(" # MW_MACHMOVE Z+500.000"));
 		}
-		if (labelZero == true) {
+		if (labelZero == true ) {
 			line.Append(_T(" # MW_MACHMOVE Z+500.000"));
 			labelZero = false;
 		}
@@ -917,3 +862,111 @@ void ConvertHeidenhain::findMatrix(CString line) {
 
 	}
 }
+
+void ConvertHeidenhain::cycleDef200() {
+
+		int tmp = 0;
+		bool overflow = false;
+		CString lineOne = ConversionAlgorithms::addTwoStrings(drill.q200, drill.q203);
+		moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineOne + _T(" F30000 SUBMOVE# "));
+
+		CString lineTwo = ConversionAlgorithms::substractTwoStrings(drill.q203, drill.q202);
+		moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineTwo + _T(" F300. SUBMOVE# "));
+
+		double numberOneAsDouble = _wtof(ConversionAlgorithms::divideTwoStrings(drill.q201, drill.q202));
+		double numberTwoAsDouble = _wtof(drill.q201) / _wtof(drill.q202);
+		if ((numberOneAsDouble * -1) != 1) {
+			overflow = true;
+		}
+		else {
+			tmp = 1;
+		}
+		CString valueQ200 = drill.q201;
+		CString valueQ203 = drill.q203;
+		CString value = lineTwo;
+
+
+
+		for (int i = 0; i < int(numberTwoAsDouble * -1)-tmp; i++) {
+
+			moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(drill.q200, drill.q203) + _T(" F300. SUBMOVE# "));
+			moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(value, drill.q200) + _T(" F300. SUBMOVE# "));
+
+			if (overflow == true && i == int(numberTwoAsDouble * -1) - 1) {
+				moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(drill.q201, drill.q203) + _T(" F300. SUBMOVE# "));
+			}
+			else {
+				moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::substractTwoStrings(value, drill.q202) + _T(" F300. SUBMOVE# "));
+			}
+			value = ConversionAlgorithms::substractTwoStrings(value, drill.q202);
+		}
+		moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(drill.q204, drill.q203) + _T(" F300. SUBMOVE# "));
+
+
+		coordinates.setZ_coordinate(ConversionAlgorithms::addTwoStrings(drill.q204, drill.q203));
+
+	
+}
+
+	void ConvertHeidenhain::cycleDef203() {
+
+		bool overflow = false;
+		CString lineOne = ConversionAlgorithms::addTwoStrings(universalDrill.q200, universalDrill.q203);
+		moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineOne + _T(" F30000 SUBMOVE# "));
+
+		CString lineTwo = ConversionAlgorithms::substractTwoStrings(universalDrill.q203, universalDrill.q202);
+		moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineTwo + _T(" F300. SUBMOVE# "));
+
+		CString anzSpanAsString = ConversionAlgorithms::addTwoStrings(universalDrill.q213, _T("0.0"));
+		double anzSpanAsDouble = _wtof(anzSpanAsString);
+		int anzSpanAsInt = (int)anzSpanAsDouble;
+
+		double numberOneAsDouble = _wtof(ConversionAlgorithms::divideTwoStrings(universalDrill.q201, universalDrill.q202));
+		double numberTwoAsDouble = _wtof(universalDrill.q201) / _wtof(universalDrill.q202);
+
+		if ((numberOneAsDouble * -1) < (numberTwoAsDouble * -1)) {
+			overflow = true;
+		}
+		CString valueTwo = lineTwo;
+		int countAnzSpan = 0;
+		for (int i = 0; i < int(numberTwoAsDouble * -1); i++) {
+
+			countAnzSpan++;
+			if (countAnzSpan == anzSpanAsInt) {
+				moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineOne + _T(" F30000 SUBMOVE# "));
+				moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::substractTwoStrings(valueTwo, _T("-0.01")) + _T(" F30000 SUBMOVE# "));
+				countAnzSpan = 0;
+			}
+			else {
+				moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(valueTwo, universalDrill.q256) + _T(" F300. SUBMOVE# "));
+			}
+			if (overflow == true && i == int(numberTwoAsDouble * -1) - 1) {
+				moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(universalDrill.q201, universalDrill.q203) + _T(" F300. SUBMOVE# "));
+			}
+			else {
+				moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::substractTwoStrings(valueTwo, universalDrill.q202) + _T(" F300. SUBMOVE# "));
+			}
+			valueTwo = ConversionAlgorithms::substractTwoStrings(valueTwo, universalDrill.q202);
+		}
+		moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + ConversionAlgorithms::addTwoStrings(universalDrill.q204, universalDrill.q203) + _T(" F300. SUBMOVE# "));
+		coordinates.setZ_coordinate(ConversionAlgorithms::addTwoStrings(universalDrill.q204, universalDrill.q203));
+	}
+
+	void ConvertHeidenhain::cycleDef207() {
+		CString lineOne = _T("");
+		CString lineTwo = _T("");
+		CString lineThree = _T("");
+		CString lineFour = _T("");
+		
+		lineOne = ConversionAlgorithms::addTwoStrings(tapping.q200, tapping.q203);
+		lineTwo = ConversionAlgorithms::addTwoStrings(tapping.q201, tapping.q203);
+		lineThree = ConversionAlgorithms::addTwoStrings(tapping.q200, tapping.q203);
+		lineFour = ConversionAlgorithms::addTwoStrings(tapping.q204, tapping.q203);
+
+		moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineOne + _T(" F30000 SUBMOVE# "));
+		moveLines.Add(_T("MW_RELMOVE FEED  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineTwo + _T(" F300. SUBMOVE# "));
+		moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineThree + _T(" F30000 SUBMOVE# "));
+		moveLines.Add(_T("MW_RELMOVE RAPID  X") + coordinates.getX_coordinate() + _T(" Y") + coordinates.getY_coordinate() + _T(" Z") + lineFour + _T(" F30000 SUBMOVE# "));
+
+		coordinates.setZ_coordinate(ConversionAlgorithms::addTwoStrings(tapping.q204,tapping.q203));
+	}

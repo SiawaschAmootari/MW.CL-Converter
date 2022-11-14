@@ -8,6 +8,7 @@
 #include "ConversionAlgorithms.h"
 #include "Drill.h"
 #include "UniversalDrill.h"
+#include "Tapping.h"
 using namespace std;
 
 class ConvertHeidenhain : public CMWCLConverterDlg
@@ -20,6 +21,7 @@ public:
 	ConfigFile configFile;
 	Drill drill;
 	UniversalDrill universalDrill;
+	Tapping tapping;
 
 	//Variables
 	CStringArray fileContent;
@@ -29,6 +31,7 @@ public:
 	CStringArray moveLines;
 	CStringArray file;
 	int label_index = 0;
+	int numberOfLastCycleDef=0;
 	
 	
 	//Methods without return value
@@ -50,6 +53,11 @@ public:
 	void findMatrix(CString line);
 	void sequenceWithoutToolChange(CString line);
 	void nameInToolList(CString line);
+	
+	void cycleDef200();
+	void cycleDef203();
+	void cycleDef207();
+
 	int initialComment();
 
 	//Methods with boolean return value
